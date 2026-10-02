@@ -1,0 +1,3 @@
+# The root data/ ignore rule must not hide this tracked upstream config.
+!Vision-OPD/verl/trainer/config/data/
+!Vision-OPD/verl/trainer/config/data/legacy_data.yaml
