@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .proxy_prompt import build_proxy_prompt
+from .proxy_prompt import build_proxy_student_messages
 from .proxy_protocol import ProxyExample, ProxyProtocolError, load_proxy_examples_jsonl
 
 
@@ -48,13 +48,7 @@ def manifest_to_proxy_rows(
             teacher_evidence=example.teacher_evidence,
         ).to_dict()
         rows.append({
-            "prompt": [{
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": build_proxy_prompt(example)},
-                ],
-            }],
+            "prompt": build_proxy_student_messages(example),
             "completion": [{"role": "assistant", "content": [{"type": "text", "text": ""}]}],
             "image": student_path,
             "teacher_image": teacher_path,

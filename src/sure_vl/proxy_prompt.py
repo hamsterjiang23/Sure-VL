@@ -66,7 +66,7 @@ class ProxyMasks:
 
 
 def build_proxy_prompt(example: ProxyExample) -> str:
-    """Describe the output contract without leaking any accepted answer."""
+    """Legacy single-user prompt; active GRPO rows use student messages below."""
     if not isinstance(example, ProxyExample):
         raise ProxyProtocolError("build_proxy_prompt requires a ProxyExample")
     hint_line = (f"Image focus: {example.student_image_hint.strip()}\n"
@@ -92,6 +92,58 @@ def build_proxy_prompt(example: ProxyExample) -> str:
         f"{hint_line}"
         f"Question: {example.question.strip()}"
     )
+
+
+_STUDENT_FORMAT_EXAMPLE = (
+    "<vision>A red book lies on the table.</vision>\n"
+    "<answer>B</answer>\n"
+    "<confidence><visual_confidence>8</visual_confidence>"
+    "<answer_confidence>7</answer_confidence></confidence>"
+)
+
+
+def build_proxy_student_messages(example: ProxyExample) -> list[dict[str, Any]]:
+    """Build the GRPO student view selected by bounded real-model format probes.
+
+    The system turn provides a complete unrelated output example. The user
+    turn repeats the exact tag order after the actual image question. The
+    accepted answer and teacher-only evidence never enter either message.
+    """
+    if not isinstance(example, ProxyExample):
+        raise ProxyProtocolError("build_proxy_student_messages requires a ProxyExample")
+    has_letter_choices = all(
+        re.search(rf"\b{letter}\.\s", example.question) for letter in "ABCD"
+    )
+    answer_instruction = (
+        "The answer must be one option letter. " if has_letter_choices
+        else "The answer must be a short direct answer. "
+    )
+    system = (
+        "Output only the following three XML blocks and no other text. "
+        + answer_instruction
+        + "Both confidence scores must be integers 0 to 10, "
+        "each inside its own named tag. No percentage signs, reasoning, or Markdown.\n"
+        "Keep <vision> within 40 words. Answer directly without a thinking block. "
+        "<visual_confidence> is your internal certainty about the visual description given this image. "
+        "<answer_confidence> is your unconditional chance that the final answer is correct.\n"
+        "Unrelated output example:\n" + _STUDENT_FORMAT_EXAMPLE
+    )
+    hint = example.student_image_hint
+    user = (
+        (f"Image focus: {hint.strip()}\n" if hint else "")
+        + f"Question: {example.question.strip()}"
+    )
+    user += (
+        "\nWrite your answer in this exact order with all five opening and five closing tags: "
+        "<vision>...</vision><answer>...</answer>"
+        "<confidence><visual_confidence>...</visual_confidence>"
+        "<answer_confidence>...</answer_confidence></confidence>."
+        " Start with <vision>."
+    )
+    return [
+        {"role": "system", "content": [{"type": "text", "text": system}]},
+        {"role": "user", "content": [{"type": "image"}, {"type": "text", "text": user}]},
+    ]
 
 
 def build_proxy_teacher_messages(

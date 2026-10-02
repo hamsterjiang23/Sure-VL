@@ -1,154 +1,75 @@
 # Sure-VL
 
-Sure-VL studies verbal confidence in vision-language models trained with a privileged visual teacher. The current method implements the **teacher-grounded internal visual certainty proxy** in [the complete derivation](./教师学生差距构造内部视觉置信度_完整推导.md). See [runtime validation](docs/validation-proxy-v1.md) for tested pipeline behavior and its limits; the small pilot does not establish effectiveness.
+Teacher-grounded internal visual confidence and answer confidence for vision-language models. The method is based on [the full derivation](教师学生差距构造内部视觉置信度_完整推导.md).
 
-## Current method
+## Training backends
 
-The Student sees a restricted image `I-` and a question. This first version generates a brief free-text visual description, an answer, and two integer reports from 0 to 10, without a reasoning or thinking block:
+| Backend | Implementation | Configuration | Environment / entry point |
+| --- | --- | --- | --- |
+| TRL | `src/sure_vl/training/trl/` — a subclass of official `trl.GRPOTrainer` 1.14.1 | `configs/trl/` | `uv sync --extra train --extra tracking --frozen`; `sure-vl-train-trl` |
+| veRL | `src/sure_vl/training/verl/` — extension using vendored official veRL | `configs/verl/` | Separate `envs/verl/`; see [backend status](docs/verl_backend.md) |
+
+`sure-vl-train` is an alias for the TRL entry point. The previous GOLD and binary-label interfaces are retained as `sure-vl-train-gold-legacy` and `sure-vl-train-legacy`. Historical flat configs and `train_proxy.py` describe those legacy routes. They are not the active training recipe.
+
+[Reference source snapshots](third_party/README.md) include OPSD, Vision-OPD, VL-Calibration, and **official veRL**, with original licenses, fixed commits and a per-file provenance manifest. The official veRL snapshot is separate from Vision-OPD's veRL fork.
+
+## Model output and Teacher input
+
+The Student receives the official full image with a red region marker and the question. Thinking is disabled. The adapted VL-Calibration prompt requests a brief description, an answer, and two **0–10 integer** reports:
 
 ```text
-<vision>brief visual description</vision>
-<answer>final answer</answer>
-<confidence><visual_confidence>v</visual_confidence><answer_confidence>r</answer_confidence></confidence>
+<vision>brief question-relevant visual description</vision>
+<answer>A</answer>
+<confidence><visual_confidence>8</visual_confidence><answer_confidence>7</answer_confidence></confidence>
 ```
 
-The two report integers are divided by 10 before scoring, so `v` and `r` in the reward equation below lie in `[0,1]`.
+The Teacher receives the **official enhanced crop**, a **different Teacher prompt**, the clean question, and optional additional evidence such as a scene graph. The official Vision-OPD-6K data has no scene graph; the manifest supports `teacher_evidence` when supplied by another dataset. Answers used for grading never enter either prompt.
 
-The linked derivation writes content as `(Z,T,y)` and shows a `<reasoning>` section. The active nonthinking pilot sets `T` to the empty sequence; its visual proxy depends on `Z` tokens and the answer check depends on `y`, so neither requires generated chain-of-thought text. The parser can recover fields from older `<think>` outputs for audits, but flags them as noncanonical for this pilot.
+The Teacher scores the exact Student-generated content token IDs. On visual-description tokens, Student/Teacher JS divergence, same-input Teacher baseline, and Teacher entropy form the detached internal target `S`. The baseline uses the exact Student prompt IDs and image. This target reflects image, evidence, template conditioning and model differences; it is a confidence proxy, not a factual visual-accuracy label. Visual spans with fewer than eight tokens fall back to `S=0` with explicit coverage counts.
 
-An EMA Teacher sees a privileged image `I+`, optional evidence `E+` (for example, a scene graph), and a **separate Teacher prompt**. It scores the **same Student completion token prefixes** without generating a replacement trajectory. On `<vision>` tokens, normalized Student–Teacher Jensen–Shannon divergence, an optional same-view Teacher baseline, and privileged-view Teacher entropy form a detached visual certainty target `S_vis`. A missing or too-short visual span receives `S_vis=0`. The target is recomputed from each rollout; it is not a stored label.
+The report integers are divided by 10 for reward calculation:
 
-The baseline `q-` uses the same EMA model with the **exact Student prompt IDs, Student image, and no privileged evidence**. Its prompt IDs are checked at runtime. With different Teacher/Student templates, the corrected gap reflects image, evidence, and template conditioning as well as model drift. JS subtraction is a heuristic correction; it does not isolate a purely visual causal effect.
+- Content reward: `Y − (r−Y)² − (v−S)² − format_penalty`.
+- Report reward: `−(r−Y)² − (v−S)² − format_penalty`.
+- Missing reports receive the corresponding maximum penalty. Known ground truth with an absent answer has `Y=0`.
 
-- `visual_confidence` (`v`) estimates **teacher-grounded internal visual certainty**. It is **not** the probability that the free-text visual description is factually correct.
-- `answer_confidence` (`r`) estimates the **unconditional probability that the final answer is correct**. It is not conditioned on a visual-correctness event.
+For A–D data, a response such as `C. sneakers` is graded correct only if the description exactly matches option C in the question; its answer format is still noncanonical. Missing reports stay missing in calibration metrics.
 
-The first-version task reward is `R = Y - (r-Y)^2 - (v-S_vis)^2`, where `Y` is checked against frozen accepted answers. Content and report spans receive separate policy weights. The adapter also applies the [original OPSD](https://github.com/siyan-zhao/OPSD/blob/main/opsd_trainer.py) **full-vocabulary forward KL** to content tokens only, with main-launcher defaults `beta=0`, temperature `1.1`, and per-vocabulary contribution cap `0.05`. The derivation presents a reverse-KL constrained objective; OPSD forward KL is this repository's explicit implementation choice, not an algebraic identity with it. Confidence tokens receive no OPSD loss. The EMA Teacher updates only after a successful Student optimizer update.
+## Native TRL training
 
-The formula above applies to valid reports and extractable answers. A missing report or unavailable answer label receives the corresponding maximal squared-score penalty; malformed structure or an unusable visual span adds a configurable format penalty (default 1). The content policy receives answer utility plus report penalties, while the report policy receives the penalties. These fallbacks are explicit implementation choices. Missing labels and fallback proxy values are excluded from the corresponding calibration denominators.
+The TRL Trainer owns sampling, accumulation, optimizer, scheduler, clipping, checkpoints and native training logs. The Sure-VL subclass supplies Teacher scoring, separate content/report advantages, and content-only OPSD.
 
-The output order and 0–10 scale follow [VL-Calibration's published prompt](https://github.com/Mr-Loevan/VL-Calibration/blob/main/examples/format_prompt/Standard_Decouple.jinja). Sure-VL adapts its visual section to a direct, brief description and changes the two report meanings to internal visual certainty and unconditional answer correctness. Broad training scale takes inspiration from [VL-Calibration](https://github.com/Mr-Loevan/VL-Calibration), regional/global inputs from [Vision-OPD](https://github.com/VisionOPD/Vision-OPD), and the distribution loss from original OPSD. [TRL GOLD 1.14.1](https://huggingface.co/docs/trl/v1.14.1/gold_trainer) handles VLM sampling and optimizer accumulation. This TRL API is experimental and pinned in `pyproject.toml`.
+Each question produces four actual sampled responses. Content and report rewards are **separately centered within that group**, without dividing by reward standard deviation. Native GRPO uses sequence mean of token mean losses. A constant reward group therefore has zero policy advantage. This is an explicit training variant of the derivation's raw score-function sum.
 
-## Privileged image and Teacher prompt
+OPSD follows the original repository's full-vocabulary forward KL, temperature 1.1 and pointwise vocabulary cap 0.05, averaged over content tokens. It uses the **same differentiable Student forward** as GRPO. Confidence tokens receive no distillation. Teacher parameters are frozen during a group and updated by FP32 EMA only after a successful optimizer step.
 
-[Vision-OPD section 3.2](https://arxiv.org/html/2605.18740v1) isolates a question-relevant evidence region and resizes the crop by **2x in width and height**. The Student receives the full image with a red bounding box and a spatial hint; the Teacher receives the crop. This is a regional perception advantage. The public [data preparation code](https://github.com/VisionOPD/Vision-OPD/blob/06860e69b5ed9dc24e96ca5c855f3a4ef25976aa/scripts/prepare_data.py) consumes precomputed `teacher_images`; it does not publish the crop-generation or interpolation implementation. Sure-VL implements the stated crop/2x method with LANCZOS interpolation as an explicit project choice.
+The V100 recipe uses the cached Qwen3.5-0.8B model, FP32, one GPU, microbatch 1, accumulation 4, learning rate `1e-6`, at most 256 generated tokens and 65,536 image pixels.
 
-The Teacher template in `proxy_prompt.py` instructs it to describe question-relevant facts from its local image and available evidence, respect the visible region's scope, and avoid inferring unseen global facts. The Student template asks for evidence from its ordinary image. Optional `teacher_evidence` is serialized into the Teacher prompt only; `accepted_answers` is used solely by the answer verifier. Both templates keep direct output and the same 0–10 integer report contract.
+## Official data and launch
 
-Build a new paired dataset from JSONL with `id`, `split`, `source_image`, `question`, `accepted_answers`, `evidence_bbox_xyxy` (source-image pixel coordinates), and optional `teacher_evidence`:
+The data source is [Vision-OPD-6K](https://huggingface.co/datasets/yuanqianhao/Vision-OPD-6K), fixed at `eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4`. The first corrected 100-update config references a frozen **512 training / 128 held-out** real-data subset. Its builder snapshots a fixed Student archive prefix, verifies the complete Teacher archive, and uses complete verified official PNGs. It records the prefix SHA and every selected image hash; it does not claim to have verified the whole Student archive. Prefix availability introduces selection bias.
+
+The separate full-data recipe, `configs/trl/qwen35_08b_visionopd_full_100step.json`, requires all seven LFS archives and every paired PNG to pass verification before freezing **5,985 training / 256 held-out** examples. Both are project holdouts from the official training data, with original-scene and actual-image-hash separation. The full download continues independently and never changes a frozen run's selection.
 
 ```bash
-uv run --extra train python scripts/build_privileged_proxy_data.py \
-  --input-jsonl /path/to/source.jsonl \
-  --output-dir /data/LHJ/Sure-VL/data/privileged_proxy_v1
-```
-
-The evidence region must contain the information needed for the question. The builder requires an explicit region; it does not invent a question-relevant box. `--allow-no-roi` explicitly permits an unchanged image and records `no_evidence_roi`. Image transforms, source/manifest hashes, and evidence presence are recorded in `provenance.json`. Evidence can be text or a JSON object/list, including a dataset-provided scene graph. This input route does not itself validate a CLEVR-Math scene graph source or generate missing annotations.
-
-## Data contract
-
-Each JSONL manifest contains one split and six required fields per example, plus optional `student_image_hint` and `teacher_evidence`:
-
-```json
-{"id":"sample-1","split":"train","student_image":"images/sample-1.restricted.png","teacher_image":"images/sample-1.clear.png","question":"What shape is shown?","accepted_answers":["circle"]}
-```
-
-Image paths are resolved relative to the manifest. Student and Teacher paths must be distinct; train and validation cannot reuse IDs or image paths. `accepted_answers` is frozen before training and checked by normalized exact matching. This strict rule can reject semantically equivalent answers with extra units, punctuation, or unlisted aliases; audit those cases before treating pilot accuracy as a research result. **No visual-fact slots, binary visual label `V`, or static proxy target are required.** An unextractable answer is not silently assigned `Y=0`. A malformed or absent confidence block does not disable content Teacher supervision.
-
-The [official VL-Calibration-12K dataset](https://modelscope.cn/datasets/xiaowenyi/VL-Calibration-12K) supplies questions, answers, and images, but no restricted/clear pairs. `scripts/build_vlcalib_proxy_pilot.py` uses a frozen 16-train/8-validation selection, verifies source files and rows, and creates a restricted Student view by downsampling then upsampling the image. It writes manifests, image hashes, and `provenance.json`. This tiny selected pilot tests the pipeline; it is not a representative effectiveness benchmark. Its selection file contains older visual-fact annotations, but the proxy builder does not read or emit them.
-
-### Official Vision-OPD pairs
-
-The current dataset route directly uses [Vision-OPD-6K](https://huggingface.co/datasets/yuanqianhao/Vision-OPD-6K), pinned to revision `eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4`. It contains 6,241 prebuilt Student/Teacher pairs and A–D answer labels. Sure-VL uses the provided Student full image and Teacher crop unchanged. `teacher_question` is an optional manifest field preserving the official clean Teacher question and all choices; the Student receives the official question with the red-box hint. Neither the correct option nor `extra_info.answer` enters a prompt. This dataset has no separate `teacher_evidence`, so it exercises the no-E branch.
-
-```bash
-uv run --extra train python scripts/fetch_vision_opd_pairs.py \
-  --source-root /data/LHJ/Sure-VL/data/vision_opd_6k_official \
-  --output-dir /data/LHJ/Sure-VL/data/vision_opd_proxy_40_v1
-```
-
-For a bounded V100 test, the fetcher downloads pinned archive prefixes, keeps only complete verified official PNG members, and freezes 32 training / 8 validation examples from available image pairs. It records archive sizes/hashes and selection provenance. The split groups by official original-image path and checks selected image hashes for overlap. This is an internal diagnostic holdout drawn from the official train split; prefix availability does not form a representative benchmark sample. To use an already extracted full dataset, run `scripts/build_vision_opd_proxy_data.py --source-root ... --output-dir ...` with the desired counts instead.
-
-### Online W&B monitoring
-
-```bash
-uv sync --extra train --extra tracking --frozen
-uv run --extra train --extra tracking sure-vl-train \
-  --config configs/qwen35_08b_v100_visionopd_smoke.json
-uv run --extra train --extra tracking sure-vl-train \
-  --config configs/qwen35_08b_v100_visionopd_100step.json
-```
-
-These recipes explicitly require online W&B and an authenticated account. Credentials stay in the normal SDK login store/environment. `tracking_run.json` records the cloud URL; offline initialization fails the tracking gate. The [metric registry](docs/metrics_registry.md) distinguishes training windows, fixed validation, actual optimizer/EMA counts, raw 0–10 reports, visual-proxy moments and effective denominators, teacher gap/entropy, rewards, and OPSD diagnostics. Missing calibration metrics are omitted rather than plotted as zero. Rank 0 uploads scalar summaries; each rank retains raw local JSONL evidence. Reference repositories and pinned commits are listed in `configs/reference_sources.json`.
-
-## Install, build data, and preflight
-
-Use [uv](https://docs.astral.sh/uv/) for environments. The core package needs no training dependencies; the `train` extra supplies PyTorch, Transformers, datasets, Accelerate, and TRL.
-
-```bash
-uv sync --extra train --frozen
-uv run --extra train python -m unittest discover -s tests -q
-uv run --extra train --with pyarrow python scripts/build_vlcalib_proxy_pilot.py \
-  --output-dir /data/LHJ/Sure-VL/data/vlcalib_proxy_pilot_v1
-```
-
-Pass `--train-parquet` and `--validation-parquet` to the builder if the official files are already local. Otherwise it fetches them and verifies their pinned hashes. `--check-only` validates the config, paths, split separation, dataset hashes, and batch equation without loading a model:
-
-```bash
-uv run --extra train sure-vl-train \
-  --config configs/sure_vl_proxy_v1.json \
-  --train-manifest /data/LHJ/Sure-VL/data/vlcalib_proxy_pilot_v1/train.jsonl \
-  --validation-manifest /data/LHJ/Sure-VL/data/vlcalib_proxy_pilot_v1/validation.jsonl \
-  --check-only
-```
-
-The checked-in `configs/sure_vl_proxy_v1.json` is a **reference-scale** Qwen3-VL-4B setting based on VL-Calibration: 8 GPUs, 15 epochs, eight generations, and global batch 256. Use the smaller configs below for the V100 pilot.
-
-## Single-V100 smoke, then 100 steps
-
-The two pilot configs point to the ordinary Qwen3.5-0.8B snapshot at `/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17`. They use one GPU, batch size 1, accumulation 1, one generation, 65,536 maximum image pixels, and 256 maximum completion tokens. Build the paired pilot data above, then check and run the **one-step smoke** under `/data/LHJ/Sure-VL`:
-
-```bash
-ssh v100-2-hamster
 cd /data/LHJ/Sure-VL
-uv sync --extra train --frozen
-CUDA_VISIBLE_DEVICES=0 uv run --extra train sure-vl-train \
-  --config configs/qwen35_08b_v100_proxy_smoke.json --check-only
-CUDA_VISIBLE_DEVICES=0 uv run --extra train python scripts/train_trl.py \
-  --config configs/qwen35_08b_v100_proxy_smoke.json
+uv sync --extra train --extra tracking --frozen
+# Requires the cached Student prefix and verified complete Teacher archive.
+uv run --extra train python -m scripts.freeze_vision_opd_prefix_subset \
+  --source-root data/vision_opd_6k_official --output-root data
+
+uv run --extra train --extra tracking sure-vl-train-trl \
+  --config configs/trl/qwen35_08b_visionopd_100step.json --check-only
+CUDA_VISIBLE_DEVICES=0 uv run --extra train --extra tracking sure-vl-train-trl \
+  --config configs/trl/qwen35_08b_visionopd_100step.json
 ```
 
-After confirming one **successful** optimizer update, the smoke validation records, and memory headroom, check and launch the separate 100-step run:
+The recipe requests **100 successful optimizer updates** and online W&B. Validation uses the same frozen 32 held-out IDs at step 0, every 20 updates, and step 100. `training_completed.json` is written only after Trainer, Adam state, successful updates, EMA and validation gates agree. A command, process start, rollout or source test is not completion evidence.
 
-```bash
-CUDA_VISIBLE_DEVICES=0 uv run --extra train sure-vl-train \
-  --config configs/qwen35_08b_v100_proxy_100step.json --check-only
-CUDA_VISIBLE_DEVICES=0 uv run --extra train python scripts/train_trl.py \
-  --config configs/qwen35_08b_v100_proxy_100step.json
-```
+See the [metric registry](docs/metrics_registry.md) for loss scale, gradient norms, active policy tokens, output coverage, integer report histograms, calibration denominators, Teacher JS/entropy, OPSD diagnostics and update counts. All cloud families use the successful-update axis through one tracking callback.
 
-Both configs set `enable_thinking=false`. The processor and tokenizer use the same Qwen nonthinking chat template: its empty `<think></think>` prefill stays in the prompt, and generated tokens start with the direct `<vision>` format above. The current small-model V100 recipe uses FP32 for Student and Teacher (`fp16=false`, `bf16=false`) and keeps FP32 EMA master weights, so check memory headroom during the smoke. V100 does not support bf16. The trainer rejects nonfinite Student gradients before an optimizer update, and EMA advances only after a successful update.
+## Training audit
 
-An earlier fp16 nonthinking probe produced a usable visual proxy, but backward gradients became NaN and the optimizer update was skipped. It did **not** complete a training step. fp16 AMP remains optional; that path keeps Student trainable parameters in FP32, runs the Teacher in fp16, and keeps FP32 EMA masters. Enable it only after a bounded smoke verifies finite gradients and zero skipped updates.
+The earlier official-data GOLD run was **stopped at 80 attempts** after confirming that its Qwen3.5 generation dropped `mm_token_type_ids` while rescoring used multimodal positions. Its results are invalid for on-policy training. [The audit](docs/trl_training_audit.md) records the mechanism and the native GRPO sampling parity check. That check used real images and actual sampled IDs, with **zero optimizer updates**; subsequent update evidence is reported separately.
 
-These are launch instructions, not completed-run evidence. A completed 100-step claim requires `training_completed.json`, 100 **successful** optimizer updates in `optimizer_evidence`, and same-subset validation at step 0 and step 100. `TrainerState.global_step`, rollout count, or a launch command alone are insufficient evidence.
-
-## Fixed validation and evidence
-
-The proxy run selects a held-out subset by ID hash before observing outputs, then evaluates the same examples at step 0, every `validation.every_n_steps`, and the requested final step with fixed per-example generation seeds. The output directory records `run_manifest.json`, `proxy_validation_metrics.jsonl`, per-step raw attempt JSONL, training telemetry, and `training_completed.json` only after completion checks pass.
-
-The audit includes answer accuracy and answer-confidence Brier/ECE with effective label counts; visual-report squared/binned error **against the internal proxy**; proxy coverage and distribution; Teacher gap and entropy components; vision length, format coverage, and OPSD signal. Visual-proxy error is not factual visual calibration. Compare checkpoints only with the same frozen subset, split, proxy settings, and image restriction. The 16/8 pilot and a 100-step smoke can establish pipeline behavior, not benchmark improvement.
-
-The [original paired-view 100-update audit](docs/validation-proxy-100step-v1.md) confirms 100 successful optimizer and EMA updates with zero skips, but all eight validation outputs lose extractable answers and usable vision spans from step 20 onward. This is a failed output-quality diagnostic. It predates the new crop/evidence/Teacher-template implementation. The new [actual-model routing fixture](docs/evidence/privileged_teacher_fixture.json) checks a synthetic crop and scene graph with a fixed completion and zero optimizer updates; it is not a CLEVR-Math evaluation or an effectiveness result.
-
-## Layout and legacy interface
-
-| Path | Purpose |
-| --- | --- |
-| `src/sure_vl/proxy_protocol.py`, `proxy_prompt.py`, `proxy_data.py` | Answer-only manifest, free-text output, paired GOLD rows |
-| `src/sure_vl/proxy_method.py`, `proxy_trainer.py`, `teacher_ema.py` | Detached proxy, joint training, successful-step EMA |
-| `src/sure_vl/proxy_metrics.py`, `proxy_evaluation.py` | Fixed-subset readback and diagnostics |
-| `src/sure_vl/train_proxy.py`, `configs/sure_vl_proxy_v1.json` | Proxy preflight and launch |
-| `src/sure_vl/trl_distillation.py` | Original OPSD loss |
-
-The earlier binary-`V` design remains under `protocol.py`, `objective.py`, `trl_prompt.py`, `trl_data.py`, `trl_trainer.py`, `train_trl.py`, and `configs/sure_vl_trl_v1.json` for comparison. Its `sure-vl` audit command and `sure-vl-train-legacy` entry point still require visual-fact labels and **conditional** answer confidence. They are not the default proxy method. The earlier derivation is [archived here](./双置信度RL与视觉教师约束_逐步推导.md).
+Historical [100-update pilot evidence](docs/validation-proxy-100step-v1.md) demonstrated optimizer execution but failed output quality. Neither those runs nor source tests establish calibration improvement.

@@ -8,6 +8,7 @@ later from frozen teacher/student token distributions.
 from __future__ import annotations
 
 import json
+import re
 import math
 import unicodedata
 from collections.abc import Mapping
@@ -148,6 +149,33 @@ def verify_proxy_answer(example: ProxyExample, answer: str | None) -> bool | Non
     if not candidate:
         return None
     return candidate in {normalize_proxy_answer(item) for item in example.accepted_answers}
+
+
+def grade_proxy_answer(example: ProxyExample, answer: str | None) -> tuple[bool, bool]:
+    """Grade known-GT correctness separately from the requested answer format.
+
+    A missing answer is an incorrect answer event. For multiple choice, accept
+    ``B. <the exact text of option B>`` for utility, while marking its format
+    noncanonical. Ambiguous selections and invented option text stay incorrect.
+    Other tasks retain exact normalized matching.
+    """
+    if answer is None or not normalize_proxy_answer(answer):
+        return False, False
+    accepted = {normalize_proxy_answer(item) for item in example.accepted_answers}
+    candidate = normalize_proxy_answer(answer)
+    if not all(re.fullmatch(r"[a-d]", item) for item in accepted):
+        return candidate in accepted, True
+    if re.fullmatch(r"[a-d]", candidate):
+        return candidate in accepted, True
+    match = re.fullmatch(r"([a-d])[.)]\s+(.+)", candidate)
+    if match is None:
+        return False, False
+    choices = {
+        letter.lower(): normalize_proxy_answer(text)
+        for letter, text in re.findall(r"(?m)^\s*([A-D])[.)]\s+([^\n]+)$", example.question)
+    }
+    letter, description = match.groups()
+    return letter in accepted and choices.get(letter) == description, False
 
 
 def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:

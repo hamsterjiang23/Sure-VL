@@ -211,7 +211,14 @@ class TrainingPlan:
                 * setting["per_device_train_batch_size"]
                 * setting["gradient_accumulation_steps"]
             ),
-            "unique_prompts_per_rank_per_update": setting["generation_batch_size"],
+            "unique_prompts_per_rank_per_update": (
+                setting["generation_batch_size"] // setting["num_generations"] // setting["target_world_size"]
+                if self.config.get("backend") in {"trl_grpo", "verl_single_gpu"} else setting["generation_batch_size"]
+            ),
+            "completions_per_update": (
+                setting["target_world_size"] * setting["per_device_train_batch_size"]
+                * setting["gradient_accumulation_steps"]
+            ),
             "output_dir": str(self.output_dir),
         }
 
@@ -314,7 +321,12 @@ def load_plan(
     if isinstance(decay, bool) or not isinstance(decay, (int, float)) or not math.isfinite(decay) or not 0 <= decay < 1:
         raise ValueError("teacher.ema_decay must be in [0,1)")
     local_batch = setting["per_device_train_batch_size"] * setting["gradient_accumulation_steps"]
-    if setting["generation_batch_size"] * setting["num_generations"] != local_batch:
+    if config.get("backend") in {"trl_grpo", "verl_single_gpu"}:
+        if setting["generation_batch_size"] != local_batch * setting["target_world_size"]:
+            raise ValueError("GRPO generation_batch_size must equal the global optimizer batch")
+        if setting["num_generations"] < 2 or setting["generation_batch_size"] % setting["num_generations"]:
+            raise ValueError("GRPO generation batch must contain complete groups of at least two samples")
+    elif setting["generation_batch_size"] * setting["num_generations"] != local_batch:
         raise ValueError("generation_batch_size * num_generations must equal the local optimizer batch")
 
     base = path.parent

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import fcntl
 import io
 import json
 import tarfile
@@ -79,6 +80,26 @@ class RangeDownloadTests(unittest.TestCase):
             self.assertEqual(sidecar["downloaded_bytes"], 17)
             self.assertEqual(sidecar["prefix_sha256"], result["prefix_sha256"])
             self.assertEqual(sidecar["hf_revision"], MIRROR_ROOT.rsplit("/", 1)[1])
+            cache.write_bytes(b"X" + cache.read_bytes()[1:])
+            with self.assertRaisesRegex(ValueError, "range cache SHA256 changed"):
+                download_prefix(
+                    label="test", url=MIRROR_ROOT + "/teacher_images/teacher_images.tar.gz",
+                    cache_path=cache, target_bytes=17, archive_size=len(data),
+                    session=session,
+                )
+
+    def test_refuses_another_writer_of_the_same_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary) / "student.prefix"
+            lock_path = cache.with_suffix(cache.suffix + ".lock")
+            with lock_path.open("a+b") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                with self.assertRaisesRegex(RuntimeError, "already has a writer"):
+                    download_prefix(
+                        label="student", url=MIRROR_ROOT + "/images/images.tar.gz00",
+                        cache_path=cache, target_bytes=3, archive_size=3,
+                        session=_FakeSession(b"abc"),
+                    )
 
 
 @unittest.skipIf(Image is None, "Pillow is needed for PNG verification")
@@ -128,6 +149,30 @@ class SafeExtractionTests(unittest.TestCase):
                     label="test", prefix_path=prefix, output_dir=output,
                     allowed_filenames={"small.png", "large.png"}, complete_archive=True,
                 )
+
+    def test_complete_gzip_tar_can_cross_split_archive_byte_boundaries(self) -> None:
+        first = self._png((5, 5))
+        second = self._png((8, 8))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive_path = root / "archive.tar.gz"
+            with tarfile.open(archive_path, "w:gz") as archive:
+                self._add_file(archive, "./first.png", first)
+                self._add_file(archive, "./second.png", second)
+            content = archive_path.read_bytes()
+            cuts = (len(content) // 3, len(content) // 3 + 1)
+            parts = (root / "part00", root / "part01", root / "part02")
+            for path, data in zip(parts, (content[:cuts[0]], content[cuts[0]:cuts[1]], content[cuts[1]:]), strict=True):
+                path.write_bytes(data)
+            output = root / "images"
+            result = extract_complete_pngs(
+                label="split", prefix_path=parts, output_dir=output,
+                allowed_filenames={"first.png", "second.png"}, complete_archive=True,
+            )
+            self.assertEqual(result["extracted"], 2)
+            self.assertEqual(result["truncated_prefix"], 0)
+            self.assertEqual((output / "first.png").read_bytes(), first)
+            self.assertEqual((output / "second.png").read_bytes(), second)
 
 
 if __name__ == "__main__":

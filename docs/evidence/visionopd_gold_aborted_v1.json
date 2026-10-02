@@ -1,0 +1,11 @@
+{
+  "status": "aborted_due_to_confirmed_implementation_error",
+  "time_utc": "2026-10-02T16:35:43.727205+00:00",
+  "source_commit": "7f6ed86fa922b83fc79573d3683afa15ba887412",
+  "reason": "GOLD rollout removes mm_token_type_ids, Qwen3.5 generation uses text-position fallback while loss forward uses multimodal RoPE; incorrect on-policy distribution.",
+  "cloud_last_successful_update_observed": 79,
+  "last_checkpoint_validation_step": 80,
+  "recorded_train_attempts": 80,
+  "completed_100_updates": false,
+  "cloud_url": "https://wandb.ai/jiangcangshu0-nanjing-university/Sure-VL/runs/9rwk29y0"
+}

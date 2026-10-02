@@ -26,7 +26,9 @@ tracking = [
 
 [project.scripts]
 sure-vl = "sure_vl.cli:main"
-sure-vl-train = "sure_vl.train_proxy:main"
+sure-vl-train = "sure_vl.training.trl.train:main"
+sure-vl-train-trl = "sure_vl.training.trl.train:main"
+sure-vl-train-gold-legacy = "sure_vl.train_proxy:main"
 sure-vl-train-legacy = "sure_vl.train_trl:main"
 
 [tool.hatch.build.targets.wheel]

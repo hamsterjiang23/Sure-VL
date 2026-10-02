@@ -39,7 +39,8 @@ class ProxyDataTests(unittest.TestCase):
         self.assertNotIn("required_visual_facts", row)
         self.assertNotIn("required_visual_facts", row["example_payload"])
         self.assertIsNone(row["student_image_hint"])
-        self.assertNotIn("circle", row["prompt"][0]["content"][1]["text"].lower())
+        self.assertEqual([message["role"] for message in row["prompt"]], ["system", "user"])
+        self.assertNotIn("circle", row["prompt"][1]["content"][1]["text"].lower())
         assert_disjoint_proxy_manifests(rows, manifest_to_proxy_rows(self.dev))
 
     def test_optional_evidence_reaches_payload_but_not_student_prompt(self) -> None:
@@ -50,7 +51,7 @@ class ProxyDataTests(unittest.TestCase):
         self.train.write_text(json.dumps(raw) + "\n")
         row = manifest_to_proxy_rows(self.train)[0]
         payload = json.loads(row["example_payload"])
-        student_text = row["prompt"][0]["content"][1]["text"]
+        student_text = row["prompt"][1]["content"][1]["text"]
         self.assertEqual(payload["teacher_evidence"], raw["teacher_evidence"])
         self.assertEqual(payload["teacher_question"], raw["teacher_question"])
         self.assertEqual(payload["student_image_hint"], raw["student_image_hint"])

@@ -231,6 +231,7 @@ def build_dataset(
     seed: str = "sure-vl-vision-opd-6k-v1",
     expected_metadata_sha256: str = METADATA_SHA256,
     expected_row_count: int = METADATA_ROW_COUNT,
+    allowed_student_names: set[str] | None = None,
 ) -> dict[str, Any]:
     """Freeze a fresh, path-referencing split of official paired images."""
     source_root = source_root.expanduser().resolve()
@@ -242,6 +243,8 @@ def build_dataset(
         expected_row_count=expected_row_count,
     )
     available, inventory = inspect_local_pairs(rows)
+    if allowed_student_names is not None:
+        available = [row for row in available if PurePosixPath(row.student_rel).name in allowed_student_names]
     train, validation = select_rows(
         available, train_count=train_count, validation_count=validation_count, seed=seed,
     )
@@ -296,6 +299,9 @@ def build_dataset(
         "metadata_sha256": metadata_sha256, "metadata_rows": len(rows),
         "source_root": str(source_root), "selection_seed": seed,
         "selection_policy": "SHA256(seed, original_images[0], row_index); one row per original image",
+        "candidate_student_name_count": (
+            len(allowed_student_names) if allowed_student_names is not None else None
+        ),
         "selection_counts": {"train": len(train), "validation": len(validation)},
         "inventory": inventory,
         "view_policy": "use the official preconstructed red-box full image and teacher crop unchanged",

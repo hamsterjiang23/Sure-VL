@@ -13,5 +13,10 @@
     "url": "https://github.com/siyan-zhao/OPSD",
     "commit": "ae7d2519e94920c4eb6206c0c26de46d9c50abae",
     "path": "third_party/OPSD"
+  },
+  "verl": {
+    "url": "https://github.com/verl-project/verl",
+    "commit": "8718ca30a3f002f93b7c4fd99b9b2506718681bc",
+    "path": "third_party/verl"
   }
 }

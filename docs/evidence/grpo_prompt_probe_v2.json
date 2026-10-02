@@ -1,0 +1,294 @@
+{
+  "kind": "real Qwen native GRPO prompt format probe, zero updates",
+  "template_sha256": "cb3fcc9eabdfc23ac1ff762bc33a591e9fa146381f13c171aaf4454047ddb3c1",
+  "model": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "G": 2,
+  "questions": 4,
+  "max_new_tokens": 256,
+  "seed": 42,
+  "variants": {
+    "system_example": {
+      "prompt_hashes": [
+        "3debea2dca2186b72c814a9f123697419a59321e86d8d604835178f07fd9af00",
+        "d86873a19170d047bdc000de90a691940612fb8b50f915855407d5de081ac478",
+        "6b695fe550277ee21c773fe1c77f7030ea8b64387c9211db44236be5952bed35",
+        "dfda2ea8b5f9da39ea5b2c9a8801e72ff895f934a7a21539c785daf6cf1b8c25"
+      ],
+      "counts": {
+        "total": 8,
+        "format_clean": 0,
+        "both_reports": 0,
+        "vision_tag_nonempty": 5,
+        "proxy_nonfallback": 5,
+        "all_three": 0
+      },
+      "records": [
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>A red pole lies on the ground inside a narrow alleyway, with people standing near it.</vision>\n<answer>C</answer>\n<confidence>9</confidence>",
+          "vision_text": "A red pole lies on the ground inside a narrow alleyway, with people standing near it.",
+          "vision_tokens": 17,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "C",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 39
+        },
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>The lower section of the white, slender pole is illuminated by a bright red light from above.</vision>\n<answer>B</answer>\n<confidence>10</confidence>",
+          "vision_text": "The lower section of the white, slender pole is illuminated by a bright red light from above.",
+          "vision_tokens": 17,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "B",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 40
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>The text 'photia myacale' appears on a white sign inside an awning box. Only the portion of the text is visible and legible.</vision>\n<answer>B</answer>\n<confidence>8</confidence>",
+          "vision_text": "The text 'photia myacale' appears on a white sign inside an awning box. Only the portion of the text is visible and legible.",
+          "vision_tokens": 30,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "B",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 52
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>The red box in the image outlines part of a white awning with black rectangular signs protruding from it. One sign above it has text that partially appears to be \"photamia\", but it's cut off and blurry. There appears to be a sign with \"cookery\" above another sign with \"foodplantation\" and a third sign below which has \"photamia myacale\". The question asks for counts within just the red box; however, the most prominent text visible \"on the visible parts of the awning\" outside of the red box that looks like it could be part of that area's awning is \"cookery\". But based strictly on inside the red box, there is just one sign visible titled \"photamia myacale\". So the answer would be one. However, a scanning option would be 2",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 171
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>A person wearing a face mask over them teeth and nose is leaning against a tall ladder next to some narrow, stretched-out sticks with a blue light.</vision>\n<answer>B</answer>\n<confidence>10/10</confidence>",
+          "vision_text": "A person wearing a face mask over them teeth and nose is leaning against a tall ladder next to some narrow, stretched-out sticks with a blue light.",
+          "vision_tokens": 28,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "B",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 54
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>A man is wearing a black face mask, while the other components are not providing any color information.\n<answer>B</answer>\n<confidence>7</confidence>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "B",
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 38
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>A group of people is walking along a street with a red and yellow taxi (The red taxi) and a large yellow taxi (The yellow city in the background near the bottom right of the image). Multiple people are visible in the foreground, including the figure of a person wearing a white shirt. In between the mounted bikes and the red bus, there appear to be other people in the crowd. The TA2 blue and yellow object does not show the yellow taxi in the foreground.\n<answer>0</answer>\n<confidence>7</confidence>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "0",
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback",
+            "noncanonical_option_answer"
+          ],
+          "generated_tokens": 115
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>A red bus is on the road, surrounded by people.</vision>\n<answer>B</answer>\n<confidence>8",
+          "vision_text": "A red bus is on the road, surrounded by people.",
+          "vision_tokens": 10,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "B",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 29
+        }
+      ]
+    },
+    "user_last_schema": {
+      "prompt_hashes": [
+        "eb159ae13419cb367cadeeda44948509321fce5c7845cb2412dcc50ba0a0b8c0",
+        "379d085b4b50a0ac366bb6b82c52f8e3ae9b31cffc55a2f52437ddf8943ef6a8",
+        "a7befba7602b217c1f029ee0d69b4c20b5648ea1106af9d5520f8b345b4b3833",
+        "ff682087286fd3ec5c1e9b67ea83e6613acdcd78a0378d34f2b586c8d6e800ab"
+      ],
+      "counts": {
+        "total": 8,
+        "format_clean": 4,
+        "both_reports": 5,
+        "vision_tag_nonempty": 8,
+        "proxy_nonfallback": 8,
+        "all_three": 5
+      },
+      "records": [
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>A red banner or pole hangs vertically in the garden.</vision>\n<answer>B</answer>\n<confidence><visual_confidence>9</visual_confidence><answer_confidence>10</answer_confidence></confidence>",
+          "vision_text": "A red banner or pole hangs vertically in the garden.",
+          "vision_tokens": 9,
+          "proxy_fallback": false,
+          "visual_confidence": 0.9,
+          "answer_confidence": 1.0,
+          "answer": "B",
+          "format_errors": [],
+          "generated_tokens": 50
+        },
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>\nThe lower section of the pole is the red one in the center of the image.\n</vision>\n<answer>C</answer>\n<confidence><visual_confidence>95</visual_confidence><answer_confidence>95</answer_confidence></confidence>",
+          "vision_text": "The lower section of the pole is the red one in the center of the image.",
+          "vision_tokens": 19,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "C",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 61
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>an outdoor scene\n    containing an awning with\n        \"photia myacale\"\n        <cloth>photia myacale</cloth>\n        Wicker wheeling grotto is located to the left\n</vision>\n<answer>A</answer>\n<confidence><visual_confidence>1</visual_confidence><answer_confidence>1</answer_confidence></confidence>",
+          "vision_text": "an outdoor scene\n    containing an awning with\n        \"photia myacale\"\n        <cloth>photia myacale</cloth>\n        Wicker wheeling grotto is located to the left",
+          "vision_tokens": 47,
+          "proxy_fallback": false,
+          "visual_confidence": 0.1,
+          "answer_confidence": 0.1,
+          "answer": "A",
+          "format_errors": [],
+          "generated_tokens": 87
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>an awning with a red rectangle on a white building</vision>\n<answer>A</answer>\n<confidence><visual_confidence>0</visual_confidence><answer_confidence>2</answer_confidence></confidence>",
+          "vision_text": "an awning with a red rectangle on a white building",
+          "vision_tokens": 11,
+          "proxy_fallback": false,
+          "visual_confidence": 0.0,
+          "answer_confidence": 0.2,
+          "answer": "A",
+          "format_errors": [],
+          "generated_tokens": 51
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>A person is wearing a white face mask over their face.</vision>\n<answer>D</answer>",
+          "vision_text": "A person is wearing a white face mask over their face.",
+          "vision_tokens": 10,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "D",
+          "format_errors": [
+            "missing_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 24
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>A person wearing a face mask sitting on a moving lawn mower.</vision>\n<answer>C</answer>\n<confidence><visual_confidence>90</visual_confidence><answer_confidence>95</answer_confidence></confidence>",
+          "vision_text": "A person wearing a face mask sitting on a moving lawn mower.",
+          "vision_tokens": 11,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "C",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 53
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>A busy street scene in Chingad plural is not visible.</vision>\n<answer>A</answer>\n<confidence><visual_confidence>10</visual_confidence><answer_confidence>10</answer_confidence></confidence>",
+          "vision_text": "A busy street scene in Chingad plural is not visible.",
+          "vision_tokens": 11,
+          "proxy_fallback": false,
+          "visual_confidence": 1.0,
+          "answer_confidence": 1.0,
+          "answer": "A",
+          "format_errors": [],
+          "generated_tokens": 53
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>A yellow taxi is visible in the foreground of the image with people inside.</vision>\n<answer>A</answer>\n<confidence><visual_confidence>8</visual_confidence><answer_confidence>1</answer_confidence>",
+          "vision_text": "A yellow taxi is visible in the foreground of the image with people inside.",
+          "vision_tokens": 13,
+          "proxy_fallback": false,
+          "visual_confidence": 0.8,
+          "answer_confidence": 0.1,
+          "answer": "A",
+          "format_errors": [
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 51
+        }
+      ]
+    }
+  },
+  "optimizer_updates": 0,
+  "runtime_seconds": 31.659750499064103,
+  "peak_gpu_memory_bytes": 7370945536
+}

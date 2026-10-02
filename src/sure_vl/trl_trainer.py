@@ -203,6 +203,40 @@ class SureVLGOLDTrainer(GOLDTrainer):  # type: ignore[misc,valid-type]
         inputs["_sure_vl_rows"] = rows
         return inputs, text_logs
 
+    def generate_on_policy_outputs(self, model, inputs, generation_config):
+        """Preserve Qwen3.5 image positions during GOLD's prompt-only sampling.
+
+        GOLD excludes all sequence keys from ``generate``. Qwen3.5 needs the
+        processor's ``mm_token_type_ids`` to construct multimodal RoPE at the
+        first decoding step; without them sampling and the later policy
+        forward use different position IDs. The collator's sequence key also
+        contains an empty completion, so align its prompt part explicitly.
+        """
+        model_type = getattr(getattr(model, "config", None), "model_type", None)
+        if model_type is None:
+            model_type = getattr(getattr(getattr(self, "model", None), "config", None), "model_type", None)
+        if model_type != "qwen3_5" or "image_grid_thw" not in inputs:
+            return super().generate_on_policy_outputs(model, inputs, generation_config)
+        if "mm_token_type_ids" not in inputs:
+            raise RuntimeError("Qwen3.5 image rollout requires processor mm_token_type_ids")
+        prompt_types = self._get_prompt_sequence_key(inputs, "mm_token_type_ids")
+        if prompt_types.shape != inputs["prompts"].shape:
+            raise RuntimeError("Qwen3.5 image rollout multimodal types do not align with prompts")
+        if getattr(self, "_sure_vl_generation_prompt_types", None) is not None:
+            raise RuntimeError("nested Qwen3.5 rollout generation is unsupported")
+        self._sure_vl_generation_prompt_types = prompt_types
+        try:
+            return super().generate_on_policy_outputs(model, inputs, generation_config)
+        finally:
+            self._sure_vl_generation_prompt_types = None
+
+    def _get_model_forward_kwargs(self, inputs, exclude=()):
+        kwargs = super()._get_model_forward_kwargs(inputs, exclude=exclude)
+        prompt_types = getattr(self, "_sure_vl_generation_prompt_types", None)
+        if prompt_types is not None and tuple(exclude) == tuple(self._SEQUENCE_KEYS):
+            kwargs["mm_token_type_ids"] = prompt_types
+        return kwargs
+
     def _teacher_logits_for_content(self, row: Mapping[str, Any], content_ids: Any) -> Any:
         """Score only sampled content tokens under the paired clear image."""
         teacher_row = {"prompt": row["prompt"], "image": row["teacher_image"]}

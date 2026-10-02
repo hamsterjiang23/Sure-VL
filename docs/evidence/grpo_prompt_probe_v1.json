@@ -1,0 +1,474 @@
+{
+  "kind": "real Qwen native GRPO prompt format probe, zero updates",
+  "template_sha256": "cb3fcc9eabdfc23ac1ff762bc33a591e9fa146381f13c171aaf4454047ddb3c1",
+  "model": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "G": 2,
+  "questions": 4,
+  "max_new_tokens": 256,
+  "seed": 42,
+  "variants": {
+    "baseline": {
+      "prompt_hashes": [
+        "3c00a9b9ef4da679ab54503463076ffc8fc8d0c1693ffff74d70b94df9cd109f",
+        "1880b2e1c46f16b172fb5c5680e38de929daa4f648fcb4a8982ee837e658f1ec",
+        "22860e12acc543dd944739815d8e1ceda4bbcd25b67df30d6a36fcc7693afac8",
+        "ae040a4f37ca4a00f40e321ba3ed1c3e4e566ca1198ec52edcc480616453ee75"
+      ],
+      "counts": {
+        "total": 8,
+        "format_clean": 0,
+        "both_reports": 1,
+        "vision_tag_nonempty": 1,
+        "proxy_nonfallback": 1,
+        "all_three": 1
+      },
+      "records": [
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "The pole with the red color line is visible all the way down, showing that it is a red-painted pole in the same color scheme. There are no other colors confirmed on the top section. Confidence scores higher if the answer to this question is correct, lower if other options are correct. Answer: C. orange",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 65
+        },
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "The lower section of the pole is white. White is a shade of gray. Confidence in this answer is 7. <solution>A</solution>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 31
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>Warp and wind fan distorts the paddy field",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 15
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "The text 'photia myacale' is faintly visible on a device inside the red bounding box. There appears to be a combination of Chinese and English characters. Confidence score for visual object detection is 10. Answer confidence for the final answer is 3.\n\n<vision>Ok using the actual image.\n<answer>C</answer>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "C",
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 73
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "The red object is wearing a white cloth. A white cloth is worn around a face mask. The final answer is D.",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 26
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>A pair of people wearing white face masks are sitting on the sidewalk.</vision>\n<answer>white</answer>\n<confidence><visual_confidence>10</visual_confidence><answer_confidence>9</answer_confidence></confidence>",
+          "vision_text": "A pair of people wearing white face masks are sitting on the sidewalk.",
+          "vision_tokens": 12,
+          "proxy_fallback": false,
+          "visual_confidence": 1.0,
+          "answer_confidence": 0.9,
+          "answer": "white",
+          "format_errors": [
+            "noncanonical_option_answer"
+          ],
+          "generated_tokens": 54
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "Based on the visual evidence in the image: the prominent white taxi with red windows in the foreground appears to be occupied by people sitting in rear seats. However, counting the number visually is challenging due to distance and motion blur. The ego-mover and pedestrian are slightly blurred, making actual observation of occupants difficult. Distractors include visible vehicles or darker foreground bricks; those, along with extra crops, don't contribute significantly to identifying interior passengers. Therefore, the most accurate answer from the given choices is A.",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 102
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "The visible yellow taxi has three people inside: two boys and a girl.\n\n<answer>C</answer>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "C",
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 23
+        }
+      ]
+    },
+    "system_short": {
+      "prompt_hashes": [
+        "2085c073ee8389ead72a7fcb1f9e5195b6a75e6634df4d1c45be7feaeb2ed61e",
+        "6f7b331acde4d76ff593a4d4533779a3419f3e0e5c65d52a28a4df9b91a49235",
+        "bed2e4b253c33bcbd01ae6fd9e290fa5cfbcd7cdd8191331bc779a2ef76dbd15",
+        "74116a88cd2399b909b0b7aac0c421ae46d6bae1de068fe1678745f5864ca324"
+      ],
+      "counts": {
+        "total": 8,
+        "format_clean": 0,
+        "both_reports": 0,
+        "vision_tag_nonempty": 6,
+        "proxy_nonfallback": 6,
+        "all_three": 0
+      },
+      "records": [
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>an image of a narrow alleyway with a red ladder standing on the sidewalk, and a pole in the red bounding box to the left</vision><answer>A</answer><confidence>100%",
+          "vision_text": "an image of a narrow alleyway with a red ladder standing on the sidewalk, and a pole in the red bounding box to the left",
+          "vision_tokens": 27,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "A",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 45
+        },
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<tool_call>_confidence>53</visual_confidence>\n<answer>A</answer><confidence>53</confidence>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "A",
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 26
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>three times the word 'photia' and 'myacale' appear on the awning with the markings 'p700 P R B' on the awning</vision><answer>C</answer><confidence>5</confidence>",
+          "vision_text": "three times the word 'photia' and 'myacale' appear on the awning with the markings 'p700 P R B' on the awning",
+          "vision_tokens": 35,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "C",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 53
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>the awning of the shop with the framed picture on the linkwood side is rectangular, similar in size to the awning on the left, and displays an item called 'Photia Myacale' painted on it. It does not appear to be a mirror or reflector.\n</vision>\n\n<answer>1</answer><confidence>95</confidence>",
+          "vision_text": "the awning of the shop with the framed picture on the linkwood side is rectangular, similar in size to the awning on the left, and displays an item called 'Photia Myacale' painted on it. It does not appear to be a mirror or reflector.",
+          "vision_tokens": 58,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "1",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "noncanonical_option_answer"
+          ],
+          "generated_tokens": 80
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>the person wearing baggy clothes and a hat wearing a white cloth to cover his face</vision><answer>white</answer>\n<confidence>90</confidence>",
+          "vision_text": "the person wearing baggy clothes and a hat wearing a white cloth to cover his face",
+          "vision_tokens": 17,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "white",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "noncanonical_option_answer"
+          ],
+          "generated_tokens": 39
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>The face mask being worn is white. If the red bounding box is sensitive to colors, then this object might have a red color. But looking at the image, it's too far from the nearest object. The closest thing that could have a red color is the planter pot, but it also looks green. But the most likely answer is the white face mask. The human boy is on the right side with a white face mask. The answer is D.</vision>A, B, C, D",
+          "vision_text": "The face mask being worn is white. If the red bounding box is sensitive to colors, then this object might have a red color. But looking at the image, it's too far from the nearest object. The closest thing that could have a red color is the planter pot, but it also looks green. But the most likely answer is the white face mask. The human boy is on the right side with a white face mask. The answer is D.",
+          "vision_tokens": 91,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 104
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "Based on the visual information in the image, there is a white bus with yellow doors clearly visible in the middle ground, and no separate taxi is shown. Therefore, the premise of the question \"How many people are visible inside the yellow taxi in the foreground\" is based on an incorrect visual object. As a part of my analysis, I've noted options A through D but none of them is a valid option in this case as there are no people visible inside the taxi.\n\n<Detailed Answer>:[D]\n</think>\n\n<Detailed Answer>\n:[D]",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 115
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>Yelp a closer look at the cars that can be seen near the lawn and golf course pool. All four are in clear view. Only one person is in the pick-up car. [939,854,987,1000. 593,887,617,1000]\n</vision>",
+          "vision_text": "Yelp a closer look at the cars that can be seen near the lawn and golf course pool. All four are in clear view. Only one person is in the pick-up car. [939,854,987,1000. 593,887,617,1000]",
+          "vision_tokens": 74,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 81
+        }
+      ]
+    },
+    "system_start_tag": {
+      "prompt_hashes": [
+        "0eb711b3b662a381f2a60e1a77ccf34191c3314f6eaf9d2bfa59b772904e1bf7",
+        "90765ae58400784b77b6787788718c1a02d53f8fcc5728500eb3fd0687002799",
+        "b6f281c1bcab1acc7a9a6f9dfc7bf9b95a7ba04b391b95812063e2e6510cf99e",
+        "0e4698865255ab79476736d17007b82bf435c9836f1c31118cd2ce5cfbd16d58"
+      ],
+      "counts": {
+        "total": 8,
+        "format_clean": 0,
+        "both_reports": 0,
+        "vision_tag_nonempty": 6,
+        "proxy_nonfallback": 5,
+        "all_three": 0
+      },
+      "records": [
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>A thick pole with orange paint runs down the center of the alleyway, ending where the buildings meet.</vision><answer>A</answer><confidence>96</confidence>",
+          "vision_text": "A thick pole with orange paint runs down the center of the alleyway, ending where the buildings meet.",
+          "vision_tokens": 19,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "A",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 38
+        },
+        {
+          "example_id": "vision-opd-6k-06230",
+          "raw_completion": "<vision>A wooden pole leans vertically with its lower section not visible in this perspective.</vision><answer>A</answer><confidence>80</confidence>",
+          "vision_text": "A wooden pole leans vertically with its lower section not visible in this perspective.",
+          "vision_tokens": 13,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "A",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 32
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>the text ‘photia myacale’ does not appear on the visible parts of the awning</vision>\n\n</answer>\n\nA",
+          "vision_text": "the text ‘photia myacale’ does not appear on the visible parts of the awning",
+          "vision_tokens": 20,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 33
+        },
+        {
+          "example_id": "vision-opd-6k-03076",
+          "raw_completion": "<vision>products on the awning are brand names like 'adidas', 'mogo', 'kni'\n</vision>\n<answer>5</answer><confidence>95</confidence>",
+          "vision_text": "products on the awning are brand names like 'adidas', 'mogo', 'kni'",
+          "vision_tokens": 22,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "5",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "noncanonical_option_answer"
+          ],
+          "generated_tokens": 44
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>the face mask being worn is white</vision><answer>D</answer><confidence>84</confidence>",
+          "vision_text": "the face mask being worn is white",
+          "vision_tokens": 7,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "D",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 26
+        },
+        {
+          "example_id": "vision-opd-6k-03157",
+          "raw_completion": "<vision>The image shows a wide, medium shot of a group of people outdoors. Most participants are wearing masks that appear to be made of reflective or colorful material, reflective with multifaceted surfaces, in blue colors. They are gathered together, possibly outdoors in a public place or a blizzard landscape. The scene includes a yellow bamboo wall, red banners, and people in winter clothing. They appear to be around 30-50 feet away, likely walking together, taking photo at some event, or gathered in outdoor areas in December.<answer>A</answer><confidence>85</confidence><visual_confidence>95</confidence>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "A",
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 132
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>A group of people, including a child, are standing inside a large, red, enclosed space that resembles the taxi in the foreground. Secular symbols are visible on the walls of the vehicle. <visual_confidence>100</visual_confidence><answer_confidence>7</answer_confidence>",
+          "vision_text": null,
+          "vision_tokens": 0,
+          "proxy_fallback": true,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": null,
+          "format_errors": [
+            "missing_or_invalid_vision",
+            "missing_or_empty_answer",
+            "missing_confidence",
+            "noncanonical_structure",
+            "vision_proxy_fallback"
+          ],
+          "generated_tokens": 65
+        },
+        {
+          "example_id": "vision-opd-6k-03512",
+          "raw_completion": "<vision>one yellow car directly under the [333,560,746,915] (red box) found several people inside counting on the side edge.</vision>\n\n<answer>B</answer><confidence>95</confidence>",
+          "vision_text": "one yellow car directly under the [333,560,746,915] (red box) found several people inside counting on the side edge.",
+          "vision_tokens": 36,
+          "proxy_fallback": false,
+          "visual_confidence": null,
+          "answer_confidence": null,
+          "answer": "B",
+          "format_errors": [
+            "invalid_visual_confidence",
+            "invalid_answer_confidence",
+            "noncanonical_structure"
+          ],
+          "generated_tokens": 57
+        }
+      ]
+    }
+  },
+  "optimizer_updates": 0,
+  "runtime_seconds": 43.53041655803099,
+  "peak_gpu_memory_bytes": 7597257216
+}

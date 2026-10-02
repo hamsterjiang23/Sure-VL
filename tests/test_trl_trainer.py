@@ -170,6 +170,47 @@ class TrainerTensorTests(unittest.TestCase):
         self.assertEqual(seen["pixel_values"], [[2.0]])
         self.assertEqual(result.tolist(), [[8, 9, 10, 11], [12, 13, 14, 15]])
 
+    def test_qwen_image_generate_gets_prompt_aligned_multimodal_types(self):
+        trainer = object.__new__(SureVLGOLDTrainer)
+        trainer.processing_class = CharacterTokenizer()
+        seen = {}
+
+        class Model:
+            config = SimpleNamespace(model_type="qwen3_5")
+
+            def generate(self, *, input_ids, mm_token_type_ids, **kwargs):
+                seen["types"] = mm_token_type_ids.clone()
+                seen["grid"] = kwargs["image_grid_thw"].clone()
+                self_outer.assertEqual(mm_token_type_ids.shape, input_ids.shape)
+                return SimpleNamespace(sequences=torch.cat(
+                    (input_ids, torch.tensor([[65], [66]])), dim=1
+                ))
+
+        self_outer = self
+        inputs = {
+            "prompts": torch.tensor([[0, 10, 11, 12], [20, 21, 22, 23]]),
+            "prompt_attention_mask": torch.tensor([[0, 1, 1, 1], [1, 1, 1, 1]]),
+            # GOLD's collator has flushed the prompt padding in full-sequence keys.
+            "mm_token_type_ids": torch.tensor([[2, 2, 0, 0, 0], [0, 2, 2, 0, 0]]),
+            "image_grid_thw": torch.tensor([[1, 2, 2], [1, 2, 2]]),
+        }
+        output = trainer.generate_on_policy_outputs(
+            Model(), inputs, SimpleNamespace(eos_token_id=None)
+        )
+        self.assertEqual(seen["types"].tolist(), [[0, 2, 2, 0], [0, 2, 2, 0]])
+        self.assertEqual(seen["grid"].tolist(), [[1, 2, 2], [1, 2, 2]])
+        self.assertEqual(output[2][:, -1].tolist(), [65, 66])
+        self.assertIsNone(getattr(trainer, "_sure_vl_generation_prompt_types", None))
+
+    def test_qwen_image_generate_fails_closed_when_types_missing(self):
+        trainer = object.__new__(SureVLGOLDTrainer)
+        model = SimpleNamespace(config=SimpleNamespace(model_type="qwen3_5"))
+        with self.assertRaisesRegex(RuntimeError, "mm_token_type_ids"):
+            trainer.generate_on_policy_outputs(
+                model, {"image_grid_thw": torch.tensor([[1, 2, 2]])},
+                SimpleNamespace(eos_token_id=None),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

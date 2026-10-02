@@ -1,0 +1,197 @@
+{
+  "kind": "real Qwen GRPO proxy G4 zero-update forward/backward audit",
+  "example_id": "vision-opd-6k-06230",
+  "template_sha256": "cb3fcc9eabdfc23ac1ff762bc33a591e9fa146381f13c171aaf4454047ddb3c1",
+  "generation": {
+    "G": 4,
+    "GA": 4,
+    "max_new_tokens": 256,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "sampled_tokens_total": 202,
+    "sampled_tokens_each": [
+      52,
+      31,
+      50,
+      69
+    ]
+  },
+  "max_p_reward_vs_native_grpo_sample_logp_delta": 2.47955322265625e-05,
+  "teacher_forward_counts": {
+    "q_plus": 8,
+    "q_minus": 4
+  },
+  "qminus_sameview_direct_diagnostic": {
+    "actual_sampled_prefixes": 4,
+    "max_abs_sampled_logp_delta": 0.0,
+    "algorithm_reward_branch_calls": 4
+  },
+  "content_report_partition_passed": true,
+  "record_summary": [
+    {
+      "format_errors": [
+        "noncanonical_option_answer"
+      ],
+      "vision_tokens": 10,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 25,
+      "answer_confidence": 1.0,
+      "visual_confidence": 0.3,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -0.10812639236916613,
+        "report": -2.108126392369166,
+        "total": -2.108126392369166,
+        "format_penalty": 1.0
+      },
+      "grpo": {
+        "content_advantage": -0.04625868797302246,
+        "report_advantage": 0.20374131202697754,
+        "active_policy_tokens": 52,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 25.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.34030380845069885,
+        "clipped_loss_mean": 0.12130573391914368,
+        "clipped_vocabulary_fraction": 7.047358394629555e-06,
+        "top1_disagreement_rate": 0.0,
+        "weighted_logit_grad_l2": 0.02512974478304386
+      }
+    },
+    {
+      "format_errors": [
+        "missing_or_empty_answer",
+        "missing_confidence",
+        "noncanonical_structure"
+      ],
+      "vision_tokens": 12,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 30,
+      "answer_confidence": null,
+      "visual_confidence": null,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -1.0,
+        "report": -3.0,
+        "total": -3.0,
+        "format_penalty": 1.0
+      },
+      "grpo": {
+        "content_advantage": -0.9381322860717773,
+        "report_advantage": -0.6881322860717773,
+        "active_policy_tokens": 31,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 30.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.6454892158508301,
+        "clipped_loss_mean": -0.0013301186263561249,
+        "clipped_vocabulary_fraction": 5.033827619627118e-06,
+        "top1_disagreement_rate": 0.0,
+        "weighted_logit_grad_l2": 0.030765265226364136
+      }
+    },
+    {
+      "format_errors": [],
+      "vision_tokens": 10,
+      "proxy_fallback": false,
+      "answer_correct": true,
+      "content_tokens": 24,
+      "answer_confidence": 0.1,
+      "visual_confidence": 0.1,
+      "reward": {
+        "utility": 1.0,
+        "answer_score": -0.81,
+        "visual_score": -0.3293443983589151,
+        "report": -1.139344398358915,
+        "total": -0.1393443983589151,
+        "format_penalty": 0.0
+      },
+      "grpo": {
+        "content_advantage": 1.9225232601165771,
+        "report_advantage": 1.1725232601165771,
+        "active_policy_tokens": 50,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 24.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.36624494194984436,
+        "clipped_loss_mean": 0.12216393649578094,
+        "clipped_vocabulary_fraction": 7.047358394629555e-06,
+        "top1_disagreement_rate": 0.25,
+        "weighted_logit_grad_l2": 0.037896618247032166
+      }
+    },
+    {
+      "format_errors": [
+        "missing_or_empty_answer",
+        "invalid_visual_confidence",
+        "invalid_answer_confidence",
+        "noncanonical_structure"
+      ],
+      "vision_tokens": 15,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 22,
+      "answer_confidence": null,
+      "visual_confidence": null,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -1.0,
+        "report": -3.0,
+        "total": -3.0,
+        "format_penalty": 1.0
+      },
+      "grpo": {
+        "content_advantage": -0.9381322860717773,
+        "report_advantage": -0.6881322860717773,
+        "active_policy_tokens": 69,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 22.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.4372224807739258,
+        "clipped_loss_mean": 0.07617819309234619,
+        "clipped_vocabulary_fraction": 9.060889169631992e-06,
+        "top1_disagreement_rate": 0.25,
+        "weighted_logit_grad_l2": 0.03875637799501419
+      }
+    }
+  ],
+  "micro_loss_scaled": [
+    0.017739109694957733,
+    0.2629324495792389,
+    -0.35374975204467773,
+    0.23240183293819427
+  ],
+  "micro_opsd_unscaled": [
+    0.15450544655323029,
+    0.12166205793619156,
+    0.1175241693854332,
+    0.16176486015319824
+  ],
+  "student_grad_norm_before_clip": 86.79391557969201,
+  "student_grad_tensors": 473,
+  "teacher_grad_tensors": 0,
+  "optimizer_constructed": false,
+  "optimizer_updates": 0,
+  "peak_gpu_memory_bytes": 14458854400,
+  "runtime_seconds": 11.743100991938263,
+  "student_prompt_json_sha256": "94d208a1fe7143eea0301e679342460767985bbff4250c75cece8f4b9e2b46ca",
+  "prompt_source_sha256": "f7e464339f479dc6ea3f251ebd2c280b942ca8346d248fe1c6d4569e447709a9"
+}
