@@ -1,0 +1,43 @@
+{
+  "model_id": "Qwen/Qwen3-VL-4B-Instruct",
+  "model_revision": null,
+  "train_manifest": null,
+  "validation_manifest": null,
+  "output_dir": "../outputs/sure-vl-trl-v1",
+  "setting": {
+    "target_world_size": 8,
+    "per_device_train_batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "generation_batch_size": 4,
+    "num_generations": 8,
+    "num_train_epochs": 15,
+    "max_steps": -1,
+    "learning_rate": 0.000001,
+    "rollout_temperature": 1.0,
+    "rollout_top_p": 1.0,
+    "max_completion_length": 4096,
+    "max_pixels": 1000000,
+    "bf16": true,
+    "fp16": false,
+    "max_grad_norm": 1.0,
+    "seed": 42,
+    "logging_steps": 10,
+    "save_steps": 100
+  },
+  "loss": {
+    "policy_weight": 1.0,
+    "opsd_weight": 1.0,
+    "opsd_beta": 0.0,
+    "opsd_temperature": 1.1,
+    "opsd_token_clip": 0.05,
+    "diagnostic_tokens": 4
+  },
+  "validation": {
+    "subset_size": 64,
+    "subset_seed": 42,
+    "every_n_steps": 20,
+    "max_new_tokens": 512,
+    "temperature": 0.6,
+    "top_p": 0.95
+  }
+}

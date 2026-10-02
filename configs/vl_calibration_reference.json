@@ -1,0 +1,66 @@
+{
+  "name": "sure_vl_trl_vl_calibration_reference_v1",
+  "status": "reference_settings_only_requires_sure_vl_data_preparation",
+  "model": {
+    "student_model_id": "Qwen/Qwen3-VL-4B-Instruct",
+    "teacher": "frozen_same_origin_checkpoint",
+    "precision": "bf16"
+  },
+  "data": {
+    "source": "https://modelscope.cn/datasets/xiaowenyi/VL-Calibration-12K",
+    "source_train_rows": 11961,
+    "source_validation_rows": 1824,
+    "source_columns": ["problem", "answer", "images"],
+    "train_path": null,
+    "validation_path": null,
+    "required_sure_vl_additions": [
+      "frozen_required_visual_facts",
+      "paired_student_restricted_and_teacher_clear_images",
+      "frozen_accepted_answers_and_split_ids"
+    ]
+  },
+  "prompt": {
+    "style": "VL-Calibration structured vision and reasoning then boxed answer",
+    "visual_fact_encoding": "JSON object in <vision> using predeclared slot keys",
+    "confidence_position": "after boxed answer",
+    "confidence_scale": "integer percentages 0 through 100",
+    "visual_confidence_event": "all required visual facts correct",
+    "conditional_answer_confidence_event": "answer correct given all required visual facts correct",
+    "confidence_analysis_block": false
+  },
+  "training": {
+    "algorithm": "GRPO",
+    "num_train_epochs": 15,
+    "learning_rate": 0.000001,
+    "global_batch_size": 256,
+    "num_generations": 8,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "max_prompt_length": 4096,
+    "max_completion_length": 4096,
+    "max_pixels": 1000000,
+    "max_grad_norm": 1.0,
+    "reference_policy_kl_coef": 0.0001
+  },
+  "evaluation": {
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "num_generations": 1,
+    "metrics": ["answer_accuracy", "answer_auroc", "answer_ece10", "visual_brier", "conditional_answer_brier", "format_rate"]
+  },
+  "source_refs": {
+    "paper_training": "https://arxiv.org/html/2604.09529v1#A1",
+    "paper_prompt": "https://arxiv.org/html/2604.09529v1#A2",
+    "official_prompt": "https://github.com/Mr-Loevan/VL-Calibration/blob/d38e15869d3a95d5d0c8fa1627d9745e490685d6/examples/format_prompt/Standard_Decouple.jinja",
+    "official_config": "https://github.com/Mr-Loevan/VL-Calibration/blob/d38e15869d3a95d5d0c8fa1627d9745e490685d6/examples/config.yaml",
+    "official_launcher": "https://github.com/Mr-Loevan/VL-Calibration/blob/d38e15869d3a95d5d0c8fa1627d9745e490685d6/examples/decouple.sh",
+    "official_dataset": "https://modelscope.cn/datasets/xiaowenyi/VL-Calibration-12K"
+  },
+  "implementation_notes": [
+    "VL-Calibration requests 0-10 visual and reasoning scores; Sure-VL uses 0-100 visual and conditional-answer reports with its existing reward semantics.",
+    "The published dataset has no predeclared fact annotations or clear/restricted image pairs; train_path and validation_path remain unset until those are prepared and frozen.",
+    "The paper reports max_pixels=1000000; official code config uses 4194304. This reference chooses the published paper value.",
+    "The official launcher points at separate train.jsonl and val.jsonl placeholders, but both use the Hugging Face train split selector; prepare independent Sure-VL splits rather than copying those paths.",
+    "reference_policy_kl_coef is the official policy/reference KL setting, not Sure-VL's student/privileged-teacher distillation coefficient."
+  ]
+}

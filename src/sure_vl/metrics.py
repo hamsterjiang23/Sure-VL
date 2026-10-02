@@ -52,16 +52,20 @@ def evaluate(
 def audit_attempts(
     examples: Sequence[Example], attempts: Sequence[OutputAttempt]
 ) -> dict[str, Any]:
-    """Audit all examples, counting missing and malformed attempts as failures.
+    """Audit labeled examples, counting missing and malformed attempts as failures.
 
     An invalid attempt has ``V=Y=0`` and every required fact false for
     correctness denominators. It has no parsed confidence or defined reward,
     so calibration and reward means state their smaller effective counts.
+    Every input example must carry verified visual facts and accepted answers;
+    raw unlabeled rows cannot be scored as incorrect examples.
     The training pipeline must define its own invalid-output reward before
     learning; this offline audit does not invent one.
     """
     if not examples:
         raise ProtocolError("examples must be nonempty")
+    if any(not isinstance(example, Example) for example in examples):
+        raise ProtocolError("audit requires labeled Example records")
     splits = {example.split for example in examples}
     if len(splits) != 1:
         raise ProtocolError("evaluate requires examples from exactly one split")
@@ -79,6 +83,11 @@ def audit_attempts(
     visual_pairs: list[tuple[float, int]] = []
     conditional_pairs: list[tuple[float, int]] = []
     rewards: list[float] = []
+    utilities: list[float] = []
+    calibrations: list[float] = []
+    joint_counts: dict[tuple[int, int], int] = {
+        (0, 0): 0, (0, 1): 0, (1, 0): 0, (1, 1): 0,
+    }
     fact_correct: dict[str, int] = defaultdict(int)
     fact_total: dict[str, int] = defaultdict(int)
     answer_correct_count = 0
@@ -104,7 +113,10 @@ def audit_attempts(
             per_fact = verification.per_fact
             v = output.visual_confidence / 100
             r = output.conditional_answer_confidence / 100
-            rewards.append(score(visual, answer, v, r).total)
+            reward = score(visual, answer, v, r)
+            rewards.append(reward.total)
+            utilities.append(reward.utility)
+            calibrations.append(reward.calibration)
             visual_pairs.append((v, visual))
             if visual:
                 conditional_pairs.append((r, answer))
@@ -113,15 +125,18 @@ def audit_attempts(
             if visual and r >= 0.8 and not answer:
                 high_conditional_errors += 1
         answer_correct_count += answer
+        joint_counts[(visual, answer)] += 1
         for slot, correct in per_fact.items():
             fact_total[slot] += 1
             fact_correct[slot] += int(correct)
 
     n = len(examples)
     visual_correct_count = len(conditional_pairs)
+    visual_incorrect_count = joint_counts[(0, 0)] + joint_counts[(0, 1)]
     return {
         "split": next(iter(splits)),
         "sample_count": n,
+        "labeled_sample_count": n,
         "required_facts_per_example": {
             "min": min(len(example.required_visual_facts) for example in examples),
             "max": max(len(example.required_visual_facts) for example in examples),
@@ -135,19 +150,54 @@ def audit_attempts(
         "format_failure_count": format_failures,
         "visual_correct": {"count": visual_correct_count, "rate": visual_correct_count / n},
         "answer_correct": {"count": answer_correct_count, "rate": answer_correct_count / n},
+        "joint_outcomes": {
+            f"v{visual}_y{answer}": {
+                "count": joint_counts[(visual, answer)],
+                "rate": joint_counts[(visual, answer)] / n,
+            }
+            for visual, answer in ((0, 0), (0, 1), (1, 0), (1, 1))
+        },
+        "answer_correct_given_visual_incorrect": {
+            "count": joint_counts[(0, 1)],
+            "denominator": visual_incorrect_count,
+            "rate": (
+                joint_counts[(0, 1)] / visual_incorrect_count
+                if visual_incorrect_count else None
+            ),
+        },
         "required_fact_accuracy": {
             slot: {"correct": fact_correct[slot], "total": count, "rate": fact_correct[slot] / count}
             for slot, count in sorted(fact_total.items())
         },
         "reward_sample_count": len(rewards),
         "reward_mean": fmean(rewards) if rewards else None,
+        "reward_components": {
+            "sample_count": len(rewards),
+            "utility_mean": fmean(utilities) if utilities else None,
+            "calibration_mean": fmean(calibrations) if calibrations else None,
+            "total_mean": fmean(rewards) if rewards else None,
+        },
         "visual_confidence_sample_count": len(visual_pairs),
+        "visual_confidence_mean": (
+            fmean(confidence for confidence, _ in visual_pairs) if visual_pairs else None
+        ),
+        "visual_confidence_observed_rate": (
+            fmean(correct for _, correct in visual_pairs) if visual_pairs else None
+        ),
         "visual_brier": (
             fmean((confidence - correct) ** 2 for confidence, correct in visual_pairs)
             if visual_pairs else None
         ),
         "visual_ece10": _ece(visual_pairs),
         "conditional_answer_sample_count": len(conditional_pairs),
+        "conditional_answer_confidence_mean": (
+            fmean(confidence for confidence, _ in conditional_pairs)
+            if conditional_pairs else None
+        ),
+        "conditional_answer_observed_rate": (
+            fmean(correct for _, correct in conditional_pairs)
+            if conditional_pairs else None
+        ),
         "conditional_answer_brier": (
             fmean((confidence - correct) ** 2 for confidence, correct in conditional_pairs)
             if conditional_pairs else None

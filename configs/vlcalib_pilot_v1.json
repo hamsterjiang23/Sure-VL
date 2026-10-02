@@ -1,0 +1,358 @@
+{
+  "source_dataset": "https://modelscope.cn/datasets/xiaowenyi/VL-Calibration-12K",
+  "source_revision": "455a8f8f1bbe56c946c56f32b55dc7ebb113030e",
+  "source_files": {
+    "train": {
+      "filename": "train.parquet",
+      "sha256": "6b6cc5fb87e75f9d45bbe6358d43fa356f90ad4074cd147f72b73f438a6485bb",
+      "rows": 11961
+    },
+    "val": {
+      "filename": "val.parquet",
+      "sha256": "fec429fe44a381fab69845ea56cdc3c32060d0907a6b380df4d8b7140931c4cf",
+      "rows": 1824
+    }
+  },
+  "selection_policy": "Manually reviewed direct visual questions. One independent visual fact was read from each source image before model outputs. Source answer and fact were checked against the image; ambiguous or visibly inconsistent source rows were excluded. Tiny pilot only, not a representative sample.",
+  "annotations": [
+    {
+      "official_split": "train",
+      "row_index": 0,
+      "raw_problem": "<image>How many units did the best selling item sell in the whole chart?",
+      "raw_answer": "9",
+      "source_image_path": "dvqa-3564-0.png",
+      "source_image_sha256": "abf05cac0534aa033e323719ed77e7b8f4221d95da77137d2e6d9562716cb0ba",
+      "required_visual_facts": {
+        "highest_item_name": {
+          "canonical": "lesson"
+        }
+      },
+      "fact_audit_note": "Orange lesson bar reaches 9, above every other individual store/item bar."
+    },
+    {
+      "official_split": "train",
+      "row_index": 13,
+      "raw_problem": "<image>How many units did the worst selling item sell in the whole chart?",
+      "raw_answer": "1",
+      "source_image_path": "dvqa-7799-0.png",
+      "source_image_sha256": "677267c832daa63e206299efd7f98a07fbc34bf5cce72c14ca58eae784e404fc",
+      "required_visual_facts": {
+        "lowest_item_name": {
+          "canonical": "point"
+        }
+      },
+      "fact_audit_note": "Point/wait bar is 1, the smallest individual sale."
+    },
+    {
+      "official_split": "train",
+      "row_index": 93,
+      "raw_problem": "<image>\nWhat is the value of Dark Turquoise at x-axis label 50?",
+      "raw_answer": "70",
+      "source_image_path": "Processed-10692329-a712-4b75-b19a-e246dfd97f8a-0.png",
+      "source_image_sha256": "3bcb62c7592f23bde5963fedab4dedd7a6380d84daa55d14d1b2ffd1c5bbf30f",
+      "required_visual_facts": {
+        "number_of_legend_lines": {
+          "canonical": "7"
+        }
+      },
+      "fact_audit_note": "Legend lists Peru, Blue, Dark Turquoise, Saddle Brown, Steel Blue, Crimson, and Bubblegum."
+    },
+    {
+      "official_split": "train",
+      "row_index": 140,
+      "raw_problem": "<image>How many people like the most preferred object in the whole chart?",
+      "raw_answer": "9",
+      "source_image_path": "dvqa-6021-0.png",
+      "source_image_sha256": "ffdea2fc56789e0ca5526eba923c002b79c592c1d9127970ecd65b5fae4ec9d9",
+      "required_visual_facts": {
+        "top_item_name": {
+          "canonical": "gold"
+        }
+      },
+      "fact_audit_note": "Gold/sleep bar reaches 9; the item is gold."
+    },
+    {
+      "official_split": "train",
+      "row_index": 176,
+      "raw_problem": "<image>How many units of the item shirt were sold in the store salary?",
+      "raw_answer": "2",
+      "source_image_path": "dvqa-21488-0.png",
+      "source_image_sha256": "c108f272f37f0e7a5d4562abc502eaff966e8dd1d7200a346654a4515100bffd",
+      "required_visual_facts": {
+        "salary_medium_units": {
+          "canonical": "7"
+        }
+      },
+      "fact_audit_note": "The cyan salary segment for medium ends at 7."
+    },
+    {
+      "official_split": "train",
+      "row_index": 530,
+      "raw_problem": "<image>What is the value of the largest individual bar in the whole chart?",
+      "raw_answer": "9",
+      "source_image_path": "dvqa-3496-0.png",
+      "source_image_sha256": "1eb394226a0caf845584e8d487961d4ece2ef0e116371b925b900ced46e77cf0",
+      "required_visual_facts": {
+        "largest_bar_category": {
+          "canonical": "parlor"
+        }
+      },
+      "fact_audit_note": "Purple color bar in parlor reaches 9."
+    },
+    {
+      "official_split": "train",
+      "row_index": 539,
+      "raw_problem": "<image>What is the value of the largest individual bar in the whole chart?",
+      "raw_answer": "90",
+      "source_image_path": "dvqa-708-0.png",
+      "source_image_sha256": "2b8d65be1490dc0e0651c463e58dada16709a8165db9ed6364f9a5fa5e926d2d",
+      "required_visual_facts": {
+        "brass_mold_value": {
+          "canonical": "70"
+        }
+      },
+      "fact_audit_note": "Teal brass bar for mold reaches 70."
+    },
+    {
+      "official_split": "train",
+      "row_index": 607,
+      "raw_problem": "<image>How many issues have over 50 respondents choosing as a very big problem?",
+      "raw_answer": "8",
+      "source_image_path": "chartqa-33752-0.png",
+      "source_image_sha256": "78e43c996724ad43d2c8117146a0253a2c23af73db4a09ef4cbd79b910c435b5",
+      "required_visual_facts": {
+        "traffic_issue_percentage": {
+          "canonical": "39"
+        }
+      },
+      "fact_audit_note": "Traffic is the bottom listed issue, labeled 39 percent."
+    },
+    {
+      "official_split": "train",
+      "row_index": 713,
+      "raw_problem": "<image>\nHow many objects are not cylinders?",
+      "raw_answer": "3",
+      "source_image_path": "Processed-87b8aaa9-a280-490d-89e9-c213b06a5a9b-0.png",
+      "source_image_sha256": "7ae16b8fee6ecfc2082340e39e625b378d3700950226a2dd17621d10e03b75e5",
+      "required_visual_facts": {
+        "red_cylinder_count": {
+          "canonical": "1"
+        }
+      },
+      "fact_audit_note": "One red cylinder appears to the left of the blue cube."
+    },
+    {
+      "official_split": "train",
+      "row_index": 1185,
+      "raw_problem": "<image>\nHow many spheres are visible in the image?",
+      "raw_answer": "2",
+      "source_image_path": "Processed-304b3b61-c358-4456-891c-52c7ab8ccc41-0.png",
+      "source_image_sha256": "2938f4252a900954af1646e260d9f55122e256bed4d7c92c37ad40d7e5bd7ee2",
+      "required_visual_facts": {
+        "purple_cube_count": {
+          "canonical": "1"
+        }
+      },
+      "fact_audit_note": "One purple cube is visible near the upper middle."
+    },
+    {
+      "official_split": "train",
+      "row_index": 1192,
+      "raw_problem": "<image>\nHow many objects are neither green nor cylindrical?",
+      "raw_answer": "2",
+      "source_image_path": "Processed-2168b458-4012-4ceb-9fa7-e0bf1f84ca6f-0.png",
+      "source_image_sha256": "ff8cc4d9c00280d4ed55424bea789a099ec2b7f2fc88da2c01d725a6a760172c",
+      "required_visual_facts": {
+        "yellow_cylinder_count": {
+          "canonical": "1"
+        }
+      },
+      "fact_audit_note": "One yellow cylinder is on the right."
+    },
+    {
+      "official_split": "train",
+      "row_index": 1513,
+      "raw_problem": "<image>What is the value of the largest individual bar in the whole chart?",
+      "raw_answer": "7",
+      "source_image_path": "dvqa-20931-0.png",
+      "source_image_sha256": "9311783ef481be3b6171eff7e307628a1047bf9a98038b01a4318ba9848909dc",
+      "required_visual_facts": {
+        "item_rest_value": {
+          "canonical": "6"
+        }
+      },
+      "fact_audit_note": "Red item bar at rest reaches 6."
+    },
+    {
+      "official_split": "train",
+      "row_index": 1566,
+      "raw_problem": "<image>How many people like the most preferred object in the whole chart?",
+      "raw_answer": "9",
+      "source_image_path": "dvqa-4731-0.png",
+      "source_image_sha256": "5a2dd86e1e1bd83f001bbcf026464f668e3ec349204af4defdfe197f9908a83b",
+      "required_visual_facts": {
+        "top_object_name": {
+          "canonical": "faint"
+        }
+      },
+      "fact_audit_note": "Faint/cell bar reaches 9, above the others."
+    },
+    {
+      "official_split": "train",
+      "row_index": 1877,
+      "raw_problem": "<image>\nWhich color has the second smallest value?",
+      "raw_answer": "Deep Sky Blue",
+      "source_image_path": "Processed-a52474fe-bc47-47ba-981b-9d5e2a23b7d3-0.png",
+      "source_image_sha256": "d7201d234848176e79a6ad7d31b7a17818eb63df5f0282edf92a020a5c10cb54",
+      "required_visual_facts": {
+        "largest_bar_name": {
+          "canonical": "Web Purple"
+        }
+      },
+      "fact_audit_note": "Web Purple is the longest horizontal bar."
+    },
+    {
+      "official_split": "train",
+      "row_index": 2193,
+      "raw_problem": "<image>\nWhich restaurant had the highest revenue from cheese pizza sales?",
+      "raw_answer": "New York Slice",
+      "source_image_path": "Processed-5d6f3997-997a-43ae-acf9-bab3f564b98f-0.jpg",
+      "source_image_sha256": "71b31158ba49a59a6f8c0f40ce9f8dfa34b88f6a4a623e13db0a8606e9a9a4c0",
+      "required_visual_facts": {
+        "new_york_slice_vegetarian_price": {
+          "canonical": "18"
+        }
+      },
+      "fact_audit_note": "New York Slice vegetarian pizza entry is $18."
+    },
+    {
+      "official_split": "train",
+      "row_index": 3794,
+      "raw_problem": "<image>\nWhat color is the boat?",
+      "raw_answer": "Brown",
+      "source_image_path": "Processed-f5adaf4e-01f4-4d52-8180-c0a2d27e92ad-0.jpg",
+      "source_image_sha256": "0e4af589b3e7cd8a1e953e03d11c536aa649ca1165bc5f0826bab9bbb6f3210d",
+      "required_visual_facts": {
+        "oar_color": {
+          "canonical": "yellow"
+        }
+      },
+      "fact_audit_note": "Two oars inside the brown boat are yellow."
+    },
+    {
+      "official_split": "val",
+      "row_index": 7,
+      "raw_problem": "<image>\nWHich period has the highest growth in number of users?",
+      "raw_answer": "Mar 2-8, 2020",
+      "source_image_path": "Processed-f8a689d5-f383-4aa8-bda0-82f4511d36dd-0.png",
+      "source_image_sha256": "6d35fa6ec0912b226a0aac8c59cde7582015f4a2437adfb0bae530f331786f27",
+      "required_visual_facts": {
+        "pyszne_pl_march_users_thousands": {
+          "canonical": "585.28"
+        }
+      },
+      "fact_audit_note": "Pyszne.pl dark March 2-8 bar is labeled 585.28."
+    },
+    {
+      "official_split": "val",
+      "row_index": 38,
+      "raw_problem": "<image>What is the value of the largest individual bar in the whole chart?",
+      "raw_answer": "9",
+      "source_image_path": "dvqa-12158-0.png",
+      "source_image_sha256": "6086b27e0dec89f6fc8d44f0d2a1bd8850ddcb08b99a85c44d479a41779234bc",
+      "required_visual_facts": {
+        "largest_bar_category": {
+          "canonical": "room"
+        }
+      },
+      "fact_audit_note": "Purple bench bar for room reaches 9."
+    },
+    {
+      "official_split": "val",
+      "row_index": 144,
+      "raw_problem": "<image>How many people like the most preferred object in the whole chart?",
+      "raw_answer": "8",
+      "source_image_path": "dvqa-16664-0.png",
+      "source_image_sha256": "914a4cabe3fe2b7defba71ede335e413d74f50df4817eade04b0f754aa9860d7",
+      "required_visual_facts": {
+        "top_item_name": {
+          "canonical": "fight"
+        }
+      },
+      "fact_audit_note": "Orange trip bar for fight reaches 8."
+    },
+    {
+      "official_split": "val",
+      "row_index": 337,
+      "raw_problem": "<image>\nHow many objects are of primary colors?",
+      "raw_answer": "3",
+      "source_image_path": "Processed-cd23e88d-8701-4141-b838-d4ea595a611d-0.png",
+      "source_image_sha256": "7b82255e3f97fc42c1dbe2557e34051a16eba1facbeecf37e100c0c058e9e636",
+      "required_visual_facts": {
+        "blue_cube_count": {
+          "canonical": "1"
+        }
+      },
+      "fact_audit_note": "One large blue cube is visible on the left."
+    },
+    {
+      "official_split": "val",
+      "row_index": 490,
+      "raw_problem": "<image>\nHow many diamonds are there?",
+      "raw_answer": "20",
+      "source_image_path": "Processed-1cd8a0fe-2bfe-4f8a-99e4-cae1dffa9e96-0.jpg",
+      "source_image_sha256": "21acdb40f8cf408696a5289aacd3c1bacc195176f9be818b25340656dfcc652c",
+      "required_visual_facts": {
+        "diamond_color": {
+          "canonical": "pink",
+          "aliases": [
+            "magenta"
+          ]
+        }
+      },
+      "fact_audit_note": "Twenty diamonds are rendered in pink/magenta."
+    },
+    {
+      "official_split": "val",
+      "row_index": 1026,
+      "raw_problem": "<image>\nHow many categories are represented in the graph?",
+      "raw_answer": "2",
+      "source_image_path": "Processed-cf6d1637-d342-41e0-8a1b-02d76c971243-0.png",
+      "source_image_sha256": "18cddee034a27db5a837bf96ae24844a7e4c516457fcba15da6da4b1916fb9e9",
+      "required_visual_facts": {
+        "top_bar_label": {
+          "canonical": "Light Sky Blue"
+        }
+      },
+      "fact_audit_note": "The top horizontal bar is labeled Light Sky Blue."
+    },
+    {
+      "official_split": "val",
+      "row_index": 1203,
+      "raw_problem": "<image>\nwhich party receives the most support?",
+      "raw_answer": "PiS/Zjednoczona Prawica",
+      "source_image_path": "Processed-6c958c7b-5760-4025-aba9-1fcdfd73f219-0.png",
+      "source_image_sha256": "2a2ee5e33839ec6fcc1734457dbddb78a6add5ecf1172872d1dfdebbe5ed5cb7",
+      "required_visual_facts": {
+        "second_largest_party": {
+          "canonical": "Koalicja Obywatelska"
+        }
+      },
+      "fact_audit_note": "The dark navy Koalicja Obywatelska segment is second largest at 21 percent."
+    },
+    {
+      "official_split": "val",
+      "row_index": 1581,
+      "raw_problem": "<image>\nHow many items are green?",
+      "raw_answer": "3",
+      "source_image_path": "Processed-e4a9a618-a3ad-4ad4-9c45-36b3f18d0e42-0.jpg",
+      "source_image_sha256": "47860bd11effe1962136cf9a2445cc9e4a2406498e648f01b0b57431735eeb63",
+      "required_visual_facts": {
+        "blue_triangle_count": {
+          "canonical": "2"
+        }
+      },
+      "fact_audit_note": "Two blue triangles sit to the right of the green group."
+    }
+  ]
+}
