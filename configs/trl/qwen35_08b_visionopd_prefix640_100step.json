@@ -2,9 +2,9 @@
   "method": "internal_visual_proxy",
   "model_id": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
   "model_revision": null,
-  "train_manifest": "../../data/vision_opd_6k_full/train.jsonl",
-  "validation_manifest": "../../data/vision_opd_6k_full/validation.jsonl",
-  "output_dir": "../../outputs/qwen35-08b-grpo-visionopd-full-100step-wandb-v1",
+  "train_manifest": "../../data/vision_opd_proxy_640_v1/train.jsonl",
+  "validation_manifest": "../../data/vision_opd_proxy_640_v1/validation.jsonl",
+  "output_dir": "../../outputs/qwen35-08b-grpo-visionopd-single-100step-wandb-v2",
   "setting": {
     "target_world_size": 1,
     "per_device_train_batch_size": 1,
@@ -65,7 +65,7 @@
     "mode": "online",
     "project": "Sure-VL",
     "entity": "jiangcangshu0-nanjing-university",
-    "run_name": "grpo-visionopd-qwen35-08b-full-100step-v1"
+    "run_name": "grpo-visionopd-qwen35-08b-single-100step-v2"
   },
   "backend": "trl_grpo",
   "grpo": {

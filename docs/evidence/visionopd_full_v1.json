@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "artifact_state": "frozen_complete_official_paired_image_dataset",
+  "verified_at_utc": "2026-10-02 17:37:51 UTC",
+  "server": "v100-2-hamster",
+  "artifact_dir": "/data/LHJ/Sure-VL/data/vision_opd_6k_full",
+  "provenance_sha256": "9d26311017b59fb2939be25a5691e0ff91e2fe0df07a7ca16d2c0a1b5f5827a4",
+  "official_source": {
+    "repo": "yuanqianhao/Vision-OPD-6K",
+    "hf_revision": "eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4",
+    "metadata_rows": 6241,
+    "metadata_sha256": "8ad2fb81da0f6fba1766545dc5f84cc2250e48704738757461b2d75aa31821df",
+    "original_images_downloaded": false
+  },
+  "paired_views": {
+    "policy": "Official preconstructed red-box full Student images and evidence-crop Teacher images, unchanged",
+    "verified_pairs": 6241,
+    "original_scene_groups": 6241,
+    "student_only": 0,
+    "teacher_only": 0,
+    "neither": 0,
+    "teacher_evidence_policy": "Absent; extra_info.question is the Teacher question, not evidence"
+  },
+  "complete_lfs_archives": {
+    "total_verified_bytes": 31283220139,
+    "images/images.tar.gz00": {
+      "bytes": 5368709120,
+      "sha256": "e72239bb03d393886e84aa2758eabcad387b03e86a7d7ce7238178f5832f52d0"
+    },
+    "images/images.tar.gz01": {
+      "bytes": 5368709120,
+      "sha256": "3e0872e7ae37cc4b94019ec0f23ae274ec5c1f7dbebfa087e6219e0da9301979"
+    },
+    "images/images.tar.gz02": {
+      "bytes": 5368709120,
+      "sha256": "b0bd79677a7439e87745f39716da57b85796dc241974032831ef67772f96be1a"
+    },
+    "images/images.tar.gz03": {
+      "bytes": 5368709120,
+      "sha256": "4b230e8f814b22117126064e8eb6d4d7ba6f639860c6982a387ce8bb814e99ee"
+    },
+    "images/images.tar.gz04": {
+      "bytes": 5368709120,
+      "sha256": "d7872e12c1ab49ca4fd0773f1e6aa621a7c3ef8355ca7e72fc57e8ce6292cfc6"
+    },
+    "images/images.tar.gz05": {
+      "bytes": 1496961022,
+      "sha256": "44844e97bc43ee0bf8546ae50ca5b709decb22c144bfda410f3ddfe8c546060a"
+    },
+    "teacher_images/teacher_images.tar.gz": {
+      "bytes": 2942713517,
+      "sha256": "f2fb6541e8e1ea4e33114aff9d511c5e8ce764c0972798151c8d5b1b5b91883e"
+    }
+  },
+  "safe_extraction": {
+    "student": {
+      "new_pngs": 5345,
+      "verified_existing_pngs": 896,
+      "truncated_prefix": false
+    },
+    "teacher": {
+      "new_pngs": 0,
+      "verified_existing_pngs": 6241,
+      "truncated_prefix": false
+    }
+  },
+  "selection": {
+    "seed": "sure-vl-vision-opd-6k-full-v1",
+    "policy": "SHA256(seed, original_images[0], row_index); one row per original image",
+    "train_rows": 5985,
+    "validation_rows": 256,
+    "official_rows_covered_once": 6241,
+    "train_manifest_sha256": "8c6f2fed41debb2d55dac92d3b766c5f566948b9bd716e7cfaf40bfd5cefc943",
+    "validation_manifest_sha256": "5a97495470c5d89e1308991102fd6e2fbaf66325262a6a010eff54ad6e437347"
+  },
+  "split_audit": {
+    "train_original_scene_groups": 5985,
+    "validation_original_scene_groups": 256,
+    "cross_split_original_scene_group_overlap": 0,
+    "cross_split_actual_image_sha256_overlap": 0
+  },
+  "scope_note": "This evidence verifies the pinned full official paired-image dataset and frozen manifests. It is not a training run or model result."
+}

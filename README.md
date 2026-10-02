@@ -49,17 +49,13 @@ Two V100s were probed on the test server. Full-model DDP failed during NCCL broa
 
 ## Official data and launch
 
-The data source is [Vision-OPD-6K](https://huggingface.co/datasets/yuanqianhao/Vision-OPD-6K), fixed at `eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4`. The first corrected 100-update config references a frozen **512 training / 128 held-out** real-data subset. Its builder snapshots a fixed Student archive prefix, verifies the complete Teacher archive, and uses complete verified official PNGs. It records the prefix SHA and every selected image hash; it does not claim to have verified the whole Student archive. Prefix availability introduces selection bias.
+The data source is [Vision-OPD-6K](https://huggingface.co/datasets/yuanqianhao/Vision-OPD-6K), fixed at `eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4`. All seven complete LFS archives and all **6,241 paired PNGs** have passed verification on the test server. The default recipe and `qwen35_08b_visionopd_full_100step.json` use frozen **5,985 training / 256 held-out** examples. [The full-data audit](docs/evidence/visionopd_full_v1.json) records archive, image, manifest and provenance checks.
 
-The separate full-data recipe, `configs/trl/qwen35_08b_visionopd_full_100step.json`, requires all seven LFS archives and every paired PNG to pass verification before freezing **5,985 training / 256 held-out** examples. Both are project holdouts from the official training data, with original-scene and actual-image-hash separation. The full download continues independently and never changes a frozen run's selection.
+The earlier prefix recipe remains available as `qwen35_08b_visionopd_prefix640_100step.json`: **512 training / 128 held-out** examples, with a fixed Student archive prefix and complete verified Teacher archive. Prefix availability introduces selection bias. Both are project holdouts from the official training data, with original-scene and actual-image-hash separation. A frozen run's selection never changes.
 
 ```bash
 cd /data/LHJ/Sure-VL
 uv sync --extra train --extra tracking --frozen
-# Requires the cached Student prefix and verified complete Teacher archive.
-uv run --extra train python -m scripts.freeze_vision_opd_prefix_subset \
-  --source-root data/vision_opd_6k_official --output-root data
-
 uv run --extra train --extra tracking sure-vl-train-trl \
   --config configs/trl/qwen35_08b_visionopd_100step.json --check-only
 CUDA_VISIBLE_DEVICES=0 uv run --no-sync --frozen --extra train --extra tracking sure-vl-train-trl \

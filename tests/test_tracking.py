@@ -132,6 +132,7 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(tracker.pending_rollout_count, 2)
             tracker.log_training({
                 "loss": 1.25, "grad_norm": math.nan,
+                "optimizer_state_max_step": 2, "optimizer_successful_updates": 999,
                 "sure_vl/rank_local/policy_loss": 0.5,
                 "sure_vl/rank_local/visual_proxy_mean": 0.0,
             }, _evidence(), 3)
@@ -162,6 +163,8 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(payload["train/answer_confidence_score/count_8"], 1)
             self.assertEqual(payload["train/format_error_missing_confidence_count"], 1)
             self.assertEqual(payload["trainer/loss"], 1.25)
+            self.assertEqual(payload["trainer/optimizer_state_max_step"], 2)
+            self.assertNotIn("trainer/optimizer_successful_updates", payload)
             self.assertEqual(payload["trainer/rank_local_policy_loss"], 0.5)
             self.assertNotIn("trainer/grad_norm", payload)
             self.assertNotIn("trainer/rank_local_visual_proxy_mean", payload)

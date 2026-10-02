@@ -301,6 +301,10 @@ class ExperimentTracker:
                     if local_name not in _RANK_LOCAL_LOG_FIELDS:
                         continue
                     destination = f"trainer/rank_local_{local_name}"
+                elif name == "optimizer_state_max_step":
+                    # This is measured from Adam state after the native step;
+                    # it is separate from the authoritative callback counters.
+                    destination = "trainer/optimizer_state_max_step"
                 elif name.startswith("optimizer_") or name.startswith("teacher_"):
                     continue  # The evidence callback is authoritative here.
                 else:
