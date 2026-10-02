@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Repository checkout entry point for Sure-VL's TRL trainer."""
+"""Repository checkout entry point for the current Sure-VL proxy trainer."""
 
-from sure_vl.train_trl import main
+from sure_vl.train_proxy import main
 
 
 if __name__ == "__main__":

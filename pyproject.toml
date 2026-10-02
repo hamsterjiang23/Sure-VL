@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "sure-vl"
 version = "0.1.0"
-description = "Dual-confidence vision-language RL with paired-image OPSD distillation"
+description = "Teacher-grounded internal visual certainty and answer calibration for VLMs"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
@@ -22,7 +22,8 @@ train = [
 
 [project.scripts]
 sure-vl = "sure_vl.cli:main"
-sure-vl-train = "sure_vl.train_trl:main"
+sure-vl-train = "sure_vl.train_proxy:main"
+sure-vl-train-legacy = "sure_vl.train_trl:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sure_vl"]

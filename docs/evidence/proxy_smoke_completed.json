@@ -1,0 +1,138 @@
+{
+  "method": "internal_visual_proxy",
+  "config_sha256": "87a8ef672c977f0fe3d7368f25c53c868a8c17550c31978da00aa4e84badf14d",
+  "configuration": {
+    "method": "internal_visual_proxy",
+    "model_id": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+    "model_revision": null,
+    "train_manifest": "../data/vlcalib_proxy_pilot_v1/train.jsonl",
+    "validation_manifest": "../data/vlcalib_proxy_pilot_v1/validation.jsonl",
+    "output_dir": "../outputs/qwen35-08b-proxy-smoke-fp32-score10-v6",
+    "setting": {
+      "target_world_size": 1,
+      "per_device_train_batch_size": 1,
+      "gradient_accumulation_steps": 1,
+      "generation_batch_size": 1,
+      "num_generations": 1,
+      "num_train_epochs": 15,
+      "max_steps": 1,
+      "learning_rate": 1e-06,
+      "rollout_temperature": 1.0,
+      "rollout_top_p": 1.0,
+      "max_completion_length": 256,
+      "max_pixels": 65536,
+      "bf16": false,
+      "fp16": false,
+      "enable_thinking": false,
+      "gradient_checkpointing": true,
+      "max_grad_norm": 1.0,
+      "seed": 42,
+      "logging_steps": 1,
+      "save_steps": 100
+    },
+    "proxy": {
+      "alpha": 0.5,
+      "tau_s": 0.5,
+      "lambda_b": 1.0,
+      "min_vision_tokens": 8,
+      "chunk_size": 16
+    },
+    "reward": {
+      "answer_utility": 1.0,
+      "rho_answer": 1.0,
+      "rho_visual": 1.0,
+      "format_penalty": 1.0
+    },
+    "teacher": {
+      "mode": "ema",
+      "ema_decay": 0.99
+    },
+    "loss": {
+      "policy_weight": 1.0,
+      "opsd_weight": 1.0,
+      "opsd_beta": 0.0,
+      "opsd_temperature": 1.1,
+      "opsd_token_clip": 0.05,
+      "diagnostic_tokens": 4
+    },
+    "validation": {
+      "subset_size": 2,
+      "subset_seed": 42,
+      "every_n_steps": 20,
+      "max_new_tokens": 256,
+      "temperature": 0.6,
+      "top_p": 0.95
+    }
+  },
+  "model_id": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "model_revision": null,
+  "train_manifest": "/data/LHJ/Sure-VL/data/vlcalib_proxy_pilot_v1/train.jsonl",
+  "train_sha256": "c60ed6a10301bb15a79582ffb96a6c9901a3b97708b7a43748bdfc157808ec60",
+  "train_count": 16,
+  "train_split": "train",
+  "validation_manifest": "/data/LHJ/Sure-VL/data/vlcalib_proxy_pilot_v1/validation.jsonl",
+  "validation_sha256": "9670b23a92b0a3f4a61b6758dfc1c453d6f2aacf8e143df453973523807bc8eb",
+  "validation_count": 8,
+  "validation_split": "validation",
+  "global_batch_size": 1,
+  "unique_prompts_per_rank_per_update": 1,
+  "output_dir": "/data/LHJ/Sure-VL/outputs/qwen35-08b-proxy-smoke-fp32-score10-v6",
+  "resolved_model_revision": null,
+  "generation_terminators": [
+    248044,
+    248046
+  ],
+  "chat_template_sha256": "cb3fcc9eabdfc23ac1ff762bc33a591e9fa146381f13c171aaf4454047ddb3c1",
+  "enable_thinking": false,
+  "confidence_report": {
+    "minimum": 0,
+    "maximum": 10,
+    "integer": true,
+    "normalization_divisor": 10
+  },
+  "sampling": {
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0
+  },
+  "fp16_initial_scale": null,
+  "source_commit": "1dc6ecf0b2a7a7f37bf451db0b9d6d7af715a83e",
+  "source_worktree_dirty": true,
+  "runtime_versions": {
+    "python": "3.10.12",
+    "torch": "2.6.0",
+    "transformers": "5.18.0",
+    "trl": "1.14.1",
+    "accelerate": "1.15.0"
+  },
+  "cuda_visible_devices": "0",
+  "device_name": "Tesla V100S-PCIE-32GB",
+  "status": "completed",
+  "optimizer_steps": 1,
+  "train_output_global_step": 1,
+  "validation_optimizer_steps": [
+    0,
+    1
+  ],
+  "train_metrics": {
+    "train_runtime": 31.6279,
+    "train_samples_per_second": 0.032,
+    "train_steps_per_second": 0.032,
+    "total_flos": 0.0,
+    "train_loss": -48.98371505737305,
+    "epoch": 0.0625,
+    "optimizer_attempted_steps": 1,
+    "optimizer_successful_updates": 1,
+    "optimizer_skipped_updates": 0,
+    "teacher_mode": "ema",
+    "teacher_ema_updates": 1
+  },
+  "optimizer_evidence": {
+    "optimizer_attempted_steps": 1,
+    "optimizer_successful_updates": 1,
+    "optimizer_skipped_updates": 0,
+    "teacher_mode": "ema",
+    "teacher_ema_updates": 1
+  },
+  "fp16_final_scale": null
+}
