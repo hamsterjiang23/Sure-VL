@@ -1,3 +1,11 @@
 # The root data/ ignore rule must not hide this tracked upstream config.
 !Vision-OPD/verl/trainer/config/data/
 !Vision-OPD/verl/trainer/config/data/legacy_data.yaml
+
+# Preserve tracked files in the official veRL source despite root ignore rules.
+!verl/.vscode/
+!verl/.vscode/settings.json
+!verl/docs/data/
+!verl/docs/data/transfer_queue.md
+!verl/verl/trainer/config/data/
+!verl/verl/trainer/config/data/legacy_data.yaml
