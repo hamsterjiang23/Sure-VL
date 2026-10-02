@@ -73,3 +73,11 @@ a small negative clipped value is not a negative raw KL or a nonfinite loss.
 Both V100s passed individual allocation and synchronization checks. The full Qwen DDP model failed during NCCL parameter broadcast even with peer/shared-memory transports disabled. A single Student process with a separately placed Teacher loaded both models, but actual generation encountered a CUDA launch timeout. These bounded attempts made zero optimizer updates. The active 100-update recipe consequently exposes only GPU 0. CPU Gloo tests cover the new distributed callback aggregation; they do not establish working GPU DDP.
 
 The earlier corrected single-GPU launch was interrupted at zero updates to investigate the requested two-GPU setup. Its output is preserved; the fallback uses a fresh `single-100step-wandb-v2` output directory.
+
+## Full official-data update evidence
+
+After all paired data became ready, the prefix-subset fallback was interrupted before its first update. The active [full-data run](https://wandb.ai/jiangcangshu0-nanjing-university/Sure-VL/runs/ep7oqk7d) uses source `b1dbc0177cf50546b6afd0bde08020c7c386c338`, 5,985 training examples and 256 held-out examples.
+
+[The first-ten-update audit](evidence/grpo_full_run_first_updates_v1.json) independently checks Adam, successful updates and EMA at every step, zero skipped updates, 40 distinct actual rollout records, and cloud readback of four attempts per update. Joint loss spans approximately `0.002–0.200`; all checked numbers are finite and the post-clip gradient norm is approximately 1. The fixed step-zero assessment has 32 examples, 22 complete dual reports and 17 clean structures; coverage remains imperfect.
+
+The active source filters out the native Adam-state field from cloud history. Actual Adam counters are retained in per-step JSONL and separately verified in W&B summary. The tracker fix in `8d95f29` exposes that field for future runs; it is not hot-patched into this run. These first ten updates establish execution and monitoring evidence, without establishing completed 100-update training or calibration improvement.

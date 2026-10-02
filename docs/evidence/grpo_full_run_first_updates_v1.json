@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "evidence_type": "active_full_dataset_grpo_first_ten_successful_updates",
+  "audited_at_utc": "2026-10-02 17:44:29 UTC",
+  "run_status_at_readback": "running",
+  "remote_output_dir": "/data/LHJ/Sure-VL/outputs/qwen35-08b-grpo-visionopd-full-100step-wandb-v1",
+  "wandb_run_id": "ep7oqk7d",
+  "wandb_run_url": "https://wandb.ai/jiangcangshu0-nanjing-university/Sure-VL/runs/ep7oqk7d",
+  "source_commit": "b1dbc0177cf50546b6afd0bde08020c7c386c338",
+  "source_worktree_dirty": false,
+  "run_manifest_sha256": "f7cbe0ec60006ed138d344db15ce3813dd0f9689613d59dceb34a55952b4045e",
+  "config_sha256": "78962321d9ee514e4baa98a036abd9b6cb2016184611b4a71d0cc23d98361dc0",
+  "train_manifest_sha256": "8c6f2fed41debb2d55dac92d3b766c5f566948b9bd716e7cfaf40bfd5cefc943",
+  "validation_manifest_sha256": "5a97495470c5d89e1308991102fd6e2fbaf66325262a6a010eff54ad6e437347",
+  "dataset_counts": {
+    "train": 5985,
+    "validation": 256
+  },
+  "optimizer_first_ten": {
+    "trainer_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "attempted_steps": 10,
+    "successful_updates": 10,
+    "skipped_updates": 0,
+    "teacher_ema_updates": 10,
+    "actual_adam_state_max_step": 10,
+    "all_ten_rows_agree": true,
+    "first_ten_jsonl_lines_sha256": "4bfc3f31f6712b1d55d5ae0dd53403877ada062f1197d183677f781d61736384",
+    "rank_zero_jsonl_lines_match_compatibility_file": true
+  },
+  "training_rollouts_first_ten": {
+    "attempt_count": 40,
+    "counts_by_preupdate_step": {
+      "0": 4,
+      "1": 4,
+      "2": 4,
+      "3": 4,
+      "4": 4,
+      "5": 4,
+      "6": 4,
+      "7": 4,
+      "8": 4,
+      "9": 4
+    },
+    "distinct_raw_completions_by_preupdate_step": {
+      "0": 4,
+      "1": 4,
+      "2": 4,
+      "3": 4,
+      "4": 4,
+      "5": 4,
+      "6": 4,
+      "7": 4,
+      "8": 4,
+      "9": 4
+    },
+    "duplicate_full_record_count": 0,
+    "first_forty_jsonl_lines_sha256": "061b511b4c7acaaf0e13288ee92e0cf73b1a527d1563963447305480dfd13484",
+    "all_numeric_values_finite": true
+  },
+  "frozen_validation_step_zero": {
+    "sample_count": 32,
+    "subset_sha256": "dde4ea3d75220b882c5eeadf13d6dbd5cb98954ea64fe75f4e24fc794165f789",
+    "subset_ids_unique": true,
+    "optimizer_state_max_step": 0,
+    "answer_correct_count": 5,
+    "answer_label_available_count": 32,
+    "answer_accuracy": 0.15625,
+    "visual_proxy_pair_count": 21,
+    "visual_proxy_eligible_count": 27,
+    "answer_confidence_count": 22,
+    "output_coverage": {
+      "total_count": 32,
+      "answer_label_available_count": 32,
+      "answer_label_available_rate": 1.0,
+      "format_clean_count": 17,
+      "format_clean_rate": 0.53125,
+      "format_error_count": 15,
+      "visual_report_count": 24,
+      "visual_report_rate": 0.75,
+      "answer_report_count": 22,
+      "answer_report_rate": 0.6875,
+      "answer_scored_report_count": 22,
+      "both_reports_count": 22,
+      "both_reports_rate": 0.6875,
+      "proxy_nonfallback_count": 27,
+      "proxy_nonfallback_rate": 0.84375
+    },
+    "metrics_jsonl_first_line_sha256": "7b437b55d3bb567f4313ab9ad1aeb881b9ad96d552134b23d04fd85db9535f23",
+    "attempts_jsonl_first_32_lines_sha256": "fa4d80d9b8396061939d59c035362451c96a7fd42f1fed251a15ad323ec10164"
+  },
+  "cloud_readback_first_ten": {
+    "source": "wandb.Api.run(...).scan_history on the exact authenticated run ID",
+    "baseline_validation_row_seen": true,
+    "training_update_rows_seen": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "attempt_count_each_step": 4,
+    "per_update": {
+      "1": {
+        "trainer/loss": 0.12349605560302734,
+        "trainer/grad_norm": 55.38752365112305,
+        "trainer/grad_norm_after_clip": 1,
+        "trainer/sure_vl_grpo_loss_unscaled": 0.004202025011181831,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.11929402686655521,
+        "attempt_count": 4,
+        "successful_updates": 1,
+        "cloud_actual_adam_state_step": null
+      },
+      "2": {
+        "trainer/loss": 0.10457082092761993,
+        "trainer/grad_norm": 24.220897674560547,
+        "trainer/grad_norm_after_clip": 0.9999998807907104,
+        "trainer/sure_vl_grpo_loss_unscaled": -7.450580596923828e-09,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.10457082651555538,
+        "attempt_count": 4,
+        "successful_updates": 2,
+        "cloud_actual_adam_state_step": null
+      },
+      "3": {
+        "trainer/loss": 0.09327024966478348,
+        "trainer/grad_norm": 58.05678176879883,
+        "trainer/grad_norm_after_clip": 0.9999999403953552,
+        "trainer/sure_vl_grpo_loss_unscaled": -5.587935447692871e-09,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.09327025804668665,
+        "attempt_count": 4,
+        "successful_updates": 3,
+        "cloud_actual_adam_state_step": null
+      },
+      "4": {
+        "trainer/loss": 0.0728113055229187,
+        "trainer/grad_norm": 34.45193862915039,
+        "trainer/grad_norm_after_clip": 0.9999999403953552,
+        "trainer/sure_vl_grpo_loss_unscaled": -0.022831082344055176,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.09564241301268339,
+        "attempt_count": 4,
+        "successful_updates": 4,
+        "cloud_actual_adam_state_step": null
+      },
+      "5": {
+        "trainer/loss": 0.11748179793357849,
+        "trainer/grad_norm": 50.506004333496094,
+        "trainer/grad_norm_after_clip": 0.9999999403953552,
+        "trainer/sure_vl_grpo_loss_unscaled": 0.061250146478414536,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.05623166635632515,
+        "attempt_count": 4,
+        "successful_updates": 5,
+        "cloud_actual_adam_state_step": null
+      },
+      "6": {
+        "trainer/loss": 0.0019695088267326355,
+        "trainer/grad_norm": 38.51329040527344,
+        "trainer/grad_norm_after_clip": 1,
+        "trainer/sure_vl_grpo_loss_unscaled": -0.045786302536726,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.04775580670684576,
+        "attempt_count": 4,
+        "successful_updates": 6,
+        "cloud_actual_adam_state_step": null
+      },
+      "7": {
+        "trainer/loss": 0.06404787302017212,
+        "trainer/grad_norm": 20.458017349243164,
+        "trainer/grad_norm_after_clip": 0.9999999403953552,
+        "trainer/sure_vl_grpo_loss_unscaled": -2.2351741790771484e-08,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.06404788792133331,
+        "attempt_count": 4,
+        "successful_updates": 7,
+        "cloud_actual_adam_state_step": null
+      },
+      "8": {
+        "trainer/loss": 0.10505145788192749,
+        "trainer/grad_norm": 131.36477661132812,
+        "trainer/grad_norm_after_clip": 0.9999999403953552,
+        "trainer/sure_vl_grpo_loss_unscaled": 0,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.10505147650837898,
+        "attempt_count": 4,
+        "successful_updates": 8,
+        "cloud_actual_adam_state_step": null
+      },
+      "9": {
+        "trainer/loss": 0.19995278120040894,
+        "trainer/grad_norm": 22.80320930480957,
+        "trainer/grad_norm_after_clip": 0.9999998807907104,
+        "trainer/sure_vl_grpo_loss_unscaled": 0.06586605310440063,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.13408671133220196,
+        "attempt_count": 4,
+        "successful_updates": 9,
+        "cloud_actual_adam_state_step": null
+      },
+      "10": {
+        "trainer/loss": 0.027142181992530823,
+        "trainer/grad_norm": 19.508773803710938,
+        "trainer/grad_norm_after_clip": 0.9999999403953552,
+        "trainer/sure_vl_grpo_loss_unscaled": -0.026375822722911835,
+        "trainer/sure_vl_opsd_loss_unscaled": 0.05351800471544266,
+        "attempt_count": 4,
+        "successful_updates": 10,
+        "cloud_actual_adam_state_step": null
+      }
+    },
+    "all_checked_training_numeric_values_finite": true,
+    "native_trainer_optimizer_state_max_step_present_each_step": false,
+    "native_adam_metric_gap": "Active b1dbc01 tracking filter omits trainer/optimizer_state_max_step; JSONL actual Adam step is independently verified for each of the first ten updates.",
+    "verified_summary_annotation": {
+      "verified_actual_adam_state_max_step": 10,
+      "verified_optimizer_successful_updates": 10,
+      "verified_first_ten_attempt_count": 40,
+      "verified_at_utc": "2026-10-02 17:44:29 UTC",
+      "verified_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    "verified_summary_annotation_read_back": true
+  },
+  "scope_note": "This verifies only the first ten successful updates of an active 100-update run. It is not a completed experiment or effectiveness result."
+}
