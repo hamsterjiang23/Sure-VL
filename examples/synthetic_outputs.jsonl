@@ -1,0 +1,2 @@
+{"id":"toy-1","visual_facts":{"object":"square","color":"blue"},"reasoning":"The square is blue.","answer":"blue","visual_confidence":80,"conditional_answer_confidence":90}
+{"id":"toy-2","visual_facts":{"object":"circle","color":"blue"},"reasoning":"The circle appears blue.","answer":"blue","visual_confidence":60,"conditional_answer_confidence":30}

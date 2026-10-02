@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sure-vl"
+version = "0.1.0"
+description = "Protocol and reference objectives for dual-confidence vision-language RL"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+sure-vl = "sure_vl.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sure_vl"]

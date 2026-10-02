@@ -1,0 +1,2 @@
+{"id":"toy-1","split":"dev","student_image":"synthetic://restricted/1","teacher_image":"synthetic://clear/1","question":"What color is the square?","required_visual_facts":{"object":"square","color":{"canonical":"blue","aliases":["azure"]}},"accepted_answers":["blue"]}
+{"id":"toy-2","split":"dev","student_image":"synthetic://restricted/2","teacher_image":"synthetic://clear/2","question":"What color is the circle?","required_visual_facts":{"object":"circle","color":"red"},"accepted_answers":["red"]}
