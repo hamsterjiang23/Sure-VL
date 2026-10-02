@@ -67,3 +67,9 @@ The pointwise OPSD vocabulary cap can make its summed modified loss negative:
 it clips positive vocabulary contributions while retaining negative terms.
 The uncapped forward KL and the clipped objective are logged separately;
 a small negative clipped value is not a negative raw KL or a nonfinite loss.
+
+## Two-GPU runtime attempts
+
+Both V100s passed individual allocation and synchronization checks. The full Qwen DDP model failed during NCCL parameter broadcast even with peer/shared-memory transports disabled. A single Student process with a separately placed Teacher loaded both models, but actual generation encountered a CUDA launch timeout. These bounded attempts made zero optimizer updates. The active 100-update recipe consequently exposes only GPU 0. CPU Gloo tests cover the new distributed callback aggregation; they do not establish working GPU DDP.
+
+The earlier corrected single-GPU launch was interrupted at zero updates to investigate the requested two-GPU setup. Its output is preserved; the fallback uses a fresh `single-100step-wandb-v2` output directory.

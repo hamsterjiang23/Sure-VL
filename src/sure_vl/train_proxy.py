@@ -212,12 +212,18 @@ class TrainingPlan:
                 * setting["gradient_accumulation_steps"]
             ),
             "unique_prompts_per_rank_per_update": (
-                setting["generation_batch_size"] // setting["num_generations"] // setting["target_world_size"]
+                max(1, math.ceil(setting["generation_batch_size"] / setting["num_generations"]
+                                 / setting["target_world_size"]))
                 if self.config.get("backend") in {"trl_grpo", "verl_single_gpu"} else setting["generation_batch_size"]
             ),
             "completions_per_update": (
                 setting["target_world_size"] * setting["per_device_train_batch_size"]
                 * setting["gradient_accumulation_steps"]
+            ),
+            "unique_prompts_per_update": (
+                setting["generation_batch_size"] // setting["num_generations"]
+                if self.config.get("backend") in {"trl_grpo", "verl_single_gpu"}
+                else setting["generation_batch_size"] * setting["target_world_size"]
             ),
             "output_dir": str(self.output_dir),
         }

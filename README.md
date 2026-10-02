@@ -45,6 +45,8 @@ OPSD follows the original repository's full-vocabulary forward KL, temperature 1
 
 The V100 recipe uses the cached Qwen3.5-0.8B model, FP32, one GPU, microbatch 1, accumulation 4, learning rate `1e-6`, at most 256 generated tokens and 65,536 image pixels.
 
+Two V100s were probed on the test server. Full-model DDP failed during NCCL broadcast; placing Student on GPU 0 and Teacher on GPU 1 also encountered a CUDA launch timeout during generation, before any optimizer update. The default therefore uses one visible GPU. `qwen35_08b_visionopd_ddp2_100step.json` and `qwen35_08b_visionopd_teacher_gpu1_100step.json` preserve the attempted configurations; neither has passed the GPU runtime gate on this server.
+
 ## Official data and launch
 
 The data source is [Vision-OPD-6K](https://huggingface.co/datasets/yuanqianhao/Vision-OPD-6K), fixed at `eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4`. The first corrected 100-update config references a frozen **512 training / 128 held-out** real-data subset. Its builder snapshots a fixed Student archive prefix, verifies the complete Teacher archive, and uses complete verified official PNGs. It records the prefix SHA and every selected image hash; it does not claim to have verified the whole Student archive. Prefix availability introduces selection bias.
@@ -60,7 +62,7 @@ uv run --extra train python -m scripts.freeze_vision_opd_prefix_subset \
 
 uv run --extra train --extra tracking sure-vl-train-trl \
   --config configs/trl/qwen35_08b_visionopd_100step.json --check-only
-CUDA_VISIBLE_DEVICES=0 uv run --extra train --extra tracking sure-vl-train-trl \
+CUDA_VISIBLE_DEVICES=0 uv run --no-sync --frozen --extra train --extra tracking sure-vl-train-trl \
   --config configs/trl/qwen35_08b_visionopd_100step.json
 ```
 

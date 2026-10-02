@@ -6,9 +6,9 @@ exactly the sampled completion IDs, replaces scalar advantages with the two
 group-centred content/report advantages supported by upstream GRPO, and adds
 an original-OPSD forward KL on content tokens from the same student forward.
 
-This adapter is pinned to the audited TRL 1.14.1 implementation.  Its first
-version deliberately supports one GPU, one row per accumulation microbatch,
-num_iterations=1, no Liger kernel, and no model/optimizer sharding.
+This adapter is pinned to the audited TRL 1.14.1 implementation.  It supports
+one or two DDP GPUs, one row per accumulation microbatch, num_iterations=1,
+no Liger kernel, and no model/optimizer sharding.
 """
 
 from __future__ import annotations
@@ -107,6 +107,22 @@ def _group_center(rewards: torch.Tensor, group_size: int, scale_rewards: str) ->
     raise ValueError("scale_rewards must be 'none', 'group', or 'batch'")
 
 
+def _global_group_center(local_rewards: torch.Tensor, accelerator: Any, group_size: int,
+                         scale_rewards: str, *, training: bool) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Center one complete GRPO group, then return this rank's contiguous slice."""
+    local_count = local_rewards.numel()
+    world = accelerator.num_processes if training else 1
+    if not local_count or local_count * world != group_size:
+        raise ValueError("local rewards do not form one complete global generation group")
+    global_rewards = accelerator.gather(local_rewards) if training and world > 1 else local_rewards
+    if global_rewards.numel() != group_size:
+        raise RuntimeError("DDP gathered rewards do not match GRPO group size")
+    global_advantages = _group_center(global_rewards, group_size, scale_rewards)
+    rank = accelerator.process_index if training else 0
+    start = rank * local_count
+    return global_advantages[start:start + local_count], global_advantages, global_rewards
+
+
 class ProxyGRPOTrainer(GRPOTrainer):
     """Native TRL GRPO with segment advantages and detached Teacher proxy."""
 
@@ -146,8 +162,8 @@ class ProxyGRPOTrainer(GRPOTrainer):
             raise ValueError("GRPO scale_rewards must be 'none', 'group', or 'batch'")
         if getattr(args, "steps_per_generation", None) != getattr(args, "gradient_accumulation_steps", None):
             raise ValueError("group scoring and one EMA update require steps_per_generation=gradient_accumulation_steps")
-        if getattr(args, "num_generations", 0) < 2 or getattr(args, "num_generations", 0) != args.steps_per_generation:
-            raise ValueError("proxy GRPO v1 requires one complete group per optimizer update")
+        if getattr(args, "num_generations", 0) < 2:
+            raise ValueError("proxy GRPO v1 requires at least two generations")
         if float(getattr(args, "temperature", math.nan)) != 1.0 or float(getattr(args, "top_p", math.nan)) != 1.0:
             raise ValueError("training requires natural temperature and untruncated top-p")
         if getattr(args, "top_k", 0) not in (0, None):
@@ -173,10 +189,27 @@ class ProxyGRPOTrainer(GRPOTrainer):
             raise ValueError("teacher mode must be fixed or ema")
         self._latest_sample_scores: list[_SampleScore] | None = None
         self.last_rollout_records: list[dict[str, Any]] = []
+        self._global_tracking_buffer: list[dict[str, Any]] = []
         super().__init__(model=model, reward_funcs=self._content_reward_func, **kwargs)
-        if self.accelerator.num_processes != 1:
-            raise ValueError("proxy GRPO v1 supports one process/GPU only")
-        self.teacher_model.to(self.accelerator.device)
+        if self.accelerator.num_processes not in (1, 2):
+            raise ValueError("proxy GRPO v1 supports one or two DDP processes")
+        if self.num_generations != args.steps_per_generation * self.accelerator.num_processes:
+            raise ValueError("one complete global GRPO group must be consumed per optimizer update")
+        if args.generation_batch_size != self.num_generations:
+            raise ValueError("generation batch must contain exactly one global GRPO group")
+        explicit_teacher_device = self.teacher_config.get("device")
+        if explicit_teacher_device is not None:
+            if explicit_teacher_device != "cuda:1":
+                raise ValueError("the external Teacher device must be cuda:1")
+            if (self.accelerator.num_processes != 1 or self.accelerator.device.type != "cuda"
+                    or self.accelerator.device.index not in (None, 0)
+                    or torch.cuda.current_device() != 0 or torch.cuda.device_count() < 2):
+                raise ValueError("cuda:1 Teacher requires one process, Student cuda:0, and two visible GPUs")
+            teacher_device = torch.device(explicit_teacher_device)
+        else:
+            teacher_device = self.accelerator.device
+        self.teacher_device = teacher_device
+        self.teacher_model.to(teacher_device)
         self.teacher_model.eval()
         for parameter in self.teacher_model.parameters():
             parameter.requires_grad_(False)
@@ -227,15 +260,30 @@ class ProxyGRPOTrainer(GRPOTrainer):
     def _causal_logits(model: Any, encoded: Mapping[str, torch.Tensor], response_ids: Sequence[int],
                        *, supports_logits_to_keep: bool) -> torch.Tensor:
         """Score response token t at prompt_len+t-1 under this view's own prefix."""
-        response = torch.as_tensor(response_ids, dtype=torch.long, device=encoded["input_ids"].device)
+        input_device = encoded["input_ids"].device
+        model_device = next(model.parameters()).device
+        cross_device = model_device != input_device
+        if cross_device and torch.is_grad_enabled():
+            raise RuntimeError("cross-device Teacher logits require detached evaluation")
+
+        def on_model(tensor: torch.Tensor) -> torch.Tensor:
+            if not cross_device:
+                return tensor
+            # Staging through host memory avoids GPU peer transport/NCCL on
+            # hosts where both cards work independently but cross-GPU fails.
+            return tensor.detach().to("cpu").to(model_device)
+
+        response = torch.as_tensor(response_ids, dtype=torch.long, device=input_device)
         if response.ndim != 1 or not response.numel():
             raise ValueError("sampled response must be nonempty")
-        prefix_ids = encoded["input_ids"]
+        prefix_ids = on_model(encoded["input_ids"])
+        response = on_model(response)
         prompt_length = prefix_ids.shape[1]
-        model_inputs = {key: value for key, value in encoded.items() if key != "input_ids"}
+        model_inputs = {key: on_model(value) for key, value in encoded.items() if key != "input_ids"}
         model_inputs["input_ids"] = torch.cat((prefix_ids, response.unsqueeze(0)), dim=1)
+        prefix_attention = model_inputs["attention_mask"]
         model_inputs["attention_mask"] = torch.cat((
-            encoded["attention_mask"], encoded["attention_mask"].new_ones((1, response.numel())),
+            prefix_attention, prefix_attention.new_ones((1, response.numel())),
         ), dim=1)
         for key in _SEQUENCE_KEYS:
             if key in model_inputs:
@@ -257,6 +305,8 @@ class ProxyGRPOTrainer(GRPOTrainer):
             raise RuntimeError("model logits do not cover sampled response positions")
         if selected.shape[0] != response.numel():
             raise RuntimeError("causal sampled-token alignment failed")
+        if cross_device:
+            return selected.detach().to("cpu").to(input_device)
         return selected
 
     def _score_one(self, example: ProxyExample, student_messages: list[dict[str, Any]],
@@ -396,8 +446,22 @@ class ProxyGRPOTrainer(GRPOTrainer):
                                        dtype=torch.float32, device=content.device)
         report_rewards = torch.tensor([entry.scored.report_reward for entry in scores],
                                       dtype=torch.float32, device=content.device)
-        content_adv = _group_center(content_rewards, group_size, self.scale_rewards)
-        report_adv = _group_center(report_rewards, group_size, self.scale_rewards)
+        if training and self.accelerator.num_processes > 1:
+            fingerprints = torch.tensor(
+                [list(bytes.fromhex(_digest(payload))) for payload in payloads],
+                dtype=torch.uint8, device=content.device,
+            )
+            global_fingerprints = self.accelerator.gather(fingerprints)
+            if global_fingerprints.shape != (group_size, 32) or not bool(
+                (global_fingerprints == global_fingerprints[:1]).all()
+            ):
+                raise RuntimeError("DDP completions are not from one identical global prompt")
+        content_adv, global_content_adv, global_content_rewards = _global_group_center(
+            content_rewards, self.accelerator, group_size, self.scale_rewards, training=training,
+        )
+        report_adv, global_report_adv, global_report_rewards = _global_group_center(
+            report_rewards, self.accelerator, group_size, self.scale_rewards, training=training,
+        )
         advantage = torch.where(content, content_adv[:, None], report_adv[:, None])
         advantage = advantage * batch["completion_mask"]
         for index, record in enumerate(records):
@@ -419,14 +483,23 @@ class ProxyGRPOTrainer(GRPOTrainer):
         self.last_rollout_records = records
         mode = "train" if training else "eval"
         active = (advantage.abs() > 0) & batch["completion_mask"].bool()
-        group_zero = (content_adv.view(-1, group_size).abs().sum(-1) == 0) & (
-            report_adv.view(-1, group_size).abs().sum(-1) == 0
+        group_zero = (global_content_adv.view(-1, group_size).abs().sum(-1) == 0) & (
+            global_report_adv.view(-1, group_size).abs().sum(-1) == 0
         )
+        group_counts = torch.tensor([
+            int(active.sum()), int(batch["completion_mask"].sum()),
+            sum(not row["proxy_fallback"] for row in records), len(records),
+        ], dtype=torch.long, device=content.device)
+        if training and self.accelerator.num_processes > 1:
+            group_counts = self.accelerator.gather(group_counts).reshape(-1, 4).sum(0)
         self._metrics[mode]["sure_vl/zero_advantage_group_fraction"].append(float(group_zero.float().mean()))
-        self._metrics[mode]["sure_vl/active_policy_tokens"].append(float(active.sum()))
-        self._metrics[mode]["sure_vl/report_reward_mean"].append(float(report_rewards.mean()))
+        self._metrics[mode]["sure_vl/active_policy_tokens"].append(float(group_counts[0]))
+        self._metrics[mode]["sure_vl/policy_active_token_fraction"].append(
+            float(group_counts[0] / group_counts[1]) if int(group_counts[1]) else 0.0
+        )
+        self._metrics[mode]["sure_vl/report_reward_mean"].append(float(global_report_rewards.mean()))
         self._metrics[mode]["sure_vl/proxy_usable_fraction"].append(
-            sum(not row["proxy_fallback"] for row in records) / len(records)
+            float(group_counts[2] / group_counts[3])
         )
         self._latest_sample_scores = None
         return batch
@@ -500,7 +573,7 @@ class ProxyGRPOTrainer(GRPOTrainer):
         self._metrics["train"]["sure_vl/content_tokens"].append(float(count))
         active = (inputs["advantages"][0].abs() > 0) & inputs["completion_mask"][0].bool()
         sampled_tokens = int(inputs["completion_mask"][0].sum())
-        self._metrics["train"]["sure_vl/policy_active_token_fraction"].append(
+        self._metrics["train"]["sure_vl/policy_active_token_fraction_micro_local"].append(
             int(active.sum()) / sampled_tokens if sampled_tokens else 0.0
         )
         self._record_training_attempt(inputs, full_opsd=float(opsd.detach()) if count else None)
@@ -518,13 +591,12 @@ class ProxyGRPOTrainer(GRPOTrainer):
                 record = json.loads(raw)
                 if full_opsd is not None:
                     record["opsd"]["full_content_clipped_loss_mean"] = full_opsd
-                destination.write(json.dumps({
+                attempt = {
                     "trainer_step_before_update": int(self.state.global_step),
                     "rank": int(self.accelerator.process_index), **record,
-                }, ensure_ascii=False, allow_nan=False) + "\n")
-                tracker = getattr(self, "experiment_tracker", None)
-                if tracker is not None and tracker.enabled:
-                    tracker.record_rollout(record)
+                }
+                destination.write(json.dumps(attempt, ensure_ascii=False, allow_nan=False) + "\n")
+                self._global_tracking_buffer.append(attempt)
 
     def _extract_images_and_prompts(self, rows: Sequence[Mapping[str, Any]]) -> tuple[list[list[Image.Image]], list[Any]]:
         """Compatibility for the fixed-subset validation callback."""

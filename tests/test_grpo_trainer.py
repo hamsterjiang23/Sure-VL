@@ -16,10 +16,12 @@ try:
     from trl import GRPOTrainer
     from sure_vl.proxy_protocol import ProxyExample
     from sure_vl.proxy_rollout import PreparedProxyRollout, ScoredProxyRollout
-    from sure_vl.training.trl.trainer import ProxyGRPOTrainer, _SampleScore, _group_center
+    from sure_vl.training.trl.trainer import (
+        ProxyGRPOTrainer, _SampleScore, _global_group_center, _group_center,
+    )
 except ImportError:
     torch = GRPOTrainer = ProxyExample = PreparedProxyRollout = ScoredProxyRollout = None
-    ProxyGRPOTrainer = _SampleScore = _group_center = None
+    ProxyGRPOTrainer = _SampleScore = _global_group_center = _group_center = None
 
 
 if torch is not None:
@@ -82,11 +84,30 @@ class ProxyGRPOTests(unittest.TestCase):
         self.assertAlmostEqual(float(advantage.sum()), 0.0, places=6)
         self.assertGreater(float(advantage[-1]), 0.0)
 
+    def test_ddp_two_plus_two_rewards_center_one_global_group(self):
+        local = torch.tensor([-3.0, -2.0])
+        remote = torch.tensor([-1.0, -3.0])
+        full = torch.cat((local, remote))
+        expected = full - full.mean()
+        for rank, rank_rewards in ((0, local), (1, remote)):
+            accelerator = SimpleNamespace(
+                num_processes=2, process_index=rank,
+                gather=lambda values, combined=full: combined,
+            )
+            subset, global_advantages, global_rewards = _global_group_center(
+                rank_rewards, accelerator, 4, "none", training=True,
+            )
+            self.assertTrue(torch.equal(global_rewards, full))
+            self.assertTrue(torch.equal(global_advantages, expected))
+            self.assertTrue(torch.equal(subset, expected[rank * 2:(rank + 1) * 2]))
+        self.assertAlmostEqual(float(expected.sum()), 0.0, places=6)
+
     def test_native_batch_keys_remain_and_two_segment_advantages_split(self):
         trainer = object.__new__(ProxyGRPOTrainer)
         trainer.model = TinyCausalModel().train()
         trainer.num_generations = 4
         trainer.num_generations_eval = 1
+        trainer.accelerator = SimpleNamespace(num_processes=1, process_index=0)
         trainer.scale_rewards = "none"
         trainer.loss_type = "grpo"
         trainer._metrics = defaultdict(lambda: defaultdict(list))

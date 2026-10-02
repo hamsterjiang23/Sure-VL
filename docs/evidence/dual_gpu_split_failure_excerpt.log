@@ -1,0 +1,6 @@
+Captured terminal excerpts from bounded zero-update diagnostics on v100-2-hamster, 2026-10-03.
+Audit script: /tmp/sure-vl-grpo-audit-pdfmethod/audit_student0_teacher1.py
+Attempt 1: Student cuda:0 and Teacher cuda:1 placement reached reward scoring. Teacher forward found a cross-device attention_mask construction bug; the source was fixed before further attempts.
+Attempt 2: Qwen generation _prepare_inputs input transfer to Student cuda:0: RuntimeError: CUDA error: the launch timed out and was terminated.
+Attempt 3: both models printed models_placed_and_synchronized (Student cuda:0, Teacher cuda:1). With CUDA_LAUNCH_BLOCKING=1, generation Qwen3.5 causal_conv1d_update failed on Student cuda:0: RuntimeError: CUDA error: the launch timed out and was terminated.
+No complete scored group, backward, EMA.update, optimizer construction, or optimizer update completed in these split-device attempts.

@@ -1,0 +1,6 @@
+Captured terminal excerpts from bounded zero-update diagnostics on v100-2-hamster, 2026-10-03.
+Audit script: /tmp/sure-vl-grpo-audit-pdfmethod/ddp_zero_update.py
+Attempt 1: rank1 Trainer.__init__ -> transformers.set_seed -> torch.cuda.manual_seed_all: RuntimeError: CUDA error: the launch timed out and was terminated.
+Attempt 2: both ranks printed models_loaded_cuda_synchronized; rank1 dist.barrier(device_ids=[local_rank]): RuntimeError: CUDA error: the launch timed out and was terminated.
+Attempt 3: NCCL_P2P_DISABLE=1 NCCL_SHM_DISABLE=1. Both models loaded and local CUDA synchronized; NCCL barrier passed. rank1 ProcessGroupNCCL watchdog: CUDA error: the launch timed out and was terminated. rank0 Collective WorkNCCL(SeqNum=8, OpType=BROADCAST, NumelIn=67263296, NumelOut=67263296) failed after rank1 exited; socket recv broken pipe.
+No generation, backward, optimizer construction, or optimizer update completed in these full-model DDP attempts.

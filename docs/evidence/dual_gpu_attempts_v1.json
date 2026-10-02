@@ -1,0 +1,38 @@
+{
+  "kind": "bounded dual-GPU feasibility evidence",
+  "date": "2026-10-03",
+  "host": "v100-2-hamster",
+  "model": "Qwen3.5-0.8B FP32 eager",
+  "methods": [
+    {
+      "method": "two-process TRL DDP; global G4, local GA2",
+      "audit_script_absolute_path": "/tmp/sure-vl-grpo-audit-pdfmethod/ddp_zero_update.py",
+      "captured_terminal_excerpt_absolute_path": "/Users/hamster/hamster_workspace/Sure-VL/docs/evidence/dual_gpu_ddp_failure_excerpt.log",
+      "attempts": 3,
+      "highest_reached_stage": "DDP initialization parameter broadcast after both model copies loaded and local CUDA synchronized",
+      "final_error": "rank1 CUDA launch timeout in NCCL watchdog; rank0 BROADCAST 67263296 elements failed after peer exit, despite NCCL_P2P_DISABLE=1 and NCCL_SHM_DISABLE=1",
+      "generation_completed": false,
+      "backward_completed": false,
+      "optimizer_updates": 0
+    },
+    {
+      "method": "one-process native TRL; Student cuda:0, Teacher cuda:1; host-staged cross-device tensors",
+      "audit_script_absolute_path": "/tmp/sure-vl-grpo-audit-pdfmethod/audit_student0_teacher1.py",
+      "captured_terminal_excerpt_absolute_path": "/Users/hamster/hamster_workspace/Sure-VL/docs/evidence/dual_gpu_split_failure_excerpt.log",
+      "attempts": 3,
+      "highest_reached_stage": "Qwen generation; both full models placed and synchronized on separate GPUs",
+      "final_error": "CUDA launch timeout in Student cuda:0 causal_conv1d_update with CUDA_LAUNCH_BLOCKING=1",
+      "scored_group_completed": false,
+      "backward_completed": false,
+      "ema_updates": 0,
+      "optimizer_updates": 0
+    }
+  ],
+  "bounded_supporting_probes": {
+    "gpu1_single_process_tensor_allocation_and_seed": "passed",
+    "two_rank_minimal_NCCL_seed_allocation_and_barrier": "passed",
+    "full_model_dual_gpu": "failed in bounded audits"
+  },
+  "post_audit_gpu_state": "GPU0 and GPU1 each 5 MiB, 0% utilization; no audit process remained",
+  "evidence_limit": "captured log files contain exact relevant terminal excerpts, not full stdout archives; no dual-GPU training result exists"
+}

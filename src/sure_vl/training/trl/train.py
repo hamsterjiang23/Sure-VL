@@ -17,10 +17,15 @@ def load_grpo_plan(path=DEFAULT_CONFIG) -> TrainingPlan:
     if plan.config.get("backend") != "trl_grpo":
         raise ValueError("TRL GRPO entry requires backend='trl_grpo'")
     setting = plan.config["setting"]
-    if setting["target_world_size"] != 1 or setting["per_device_train_batch_size"] != 1:
-        raise ValueError("this V100 recipe requires one GPU and microbatch size one")
-    if setting["gradient_accumulation_steps"] != setting["generation_batch_size"]:
+    world = setting["target_world_size"]
+    if world not in (1, 2) or setting["per_device_train_batch_size"] != 1:
+        raise ValueError("this V100 recipe supports one or two GPUs with microbatch size one")
+    if setting["gradient_accumulation_steps"] * world != setting["generation_batch_size"]:
         raise ValueError("complete one fresh generation batch before each optimizer/EMA update")
+    if plan.config["validation"]["subset_size"] % world:
+        raise ValueError("fixed validation subset must divide evenly across ranks")
+    if plan.config["teacher"].get("device") is not None and world != 1:
+        raise ValueError("a separately placed Teacher requires one Student process")
     if setting["fp16"] or setting["bf16"]:
         raise ValueError("V100 Qwen3.5 recipe uses FP32")
     if plan.config.get("grpo") != {"loss_type": "grpo", "scale_rewards": "none", "num_iterations": 1}:
@@ -39,9 +44,12 @@ def _dataset(rows):
 
 
 def run_training(plan: TrainingPlan) -> None:
-    if os.environ.get("WORLD_SIZE", "1") != "1":
-        raise RuntimeError("this single-GPU GRPO recipe requires WORLD_SIZE=1")
+    actual_world = int(os.environ.get("WORLD_SIZE", "1"))
+    if actual_world != plan.config["setting"]["target_world_size"]:
+        raise RuntimeError("launch WORLD_SIZE differs from configured target_world_size")
     import torch
+    if torch.cuda.is_available():
+        torch.cuda.set_device(int(os.environ.get("LOCAL_RANK", "0")))
     from trl import GRPOConfig
     from transformers import AutoModelForImageTextToText, AutoProcessor
     from ...teacher_ema import OptimizerEvidenceCallback
@@ -80,6 +88,7 @@ def run_training(plan: TrainingPlan) -> None:
         use_vllm=False, use_liger_kernel=False, disable_dropout=True,
         bf16=False, fp16=False, gradient_checkpointing=setting["gradient_checkpointing"],
         max_grad_norm=setting["max_grad_norm"], seed=setting["seed"],
+        ddp_find_unused_parameters=False,
         logging_steps=setting["logging_steps"], save_steps=setting["save_steps"],
         save_strategy="steps", eval_strategy="no", remove_unused_columns=False,
         # The tracking callback uploads native GRPO logs on the successful
@@ -87,6 +96,10 @@ def run_training(plan: TrainingPlan) -> None:
         report_to=[],
         run_name=plan.config["tracking"].get("run_name"), log_completions=False,
     )
+    # GRPO Student is one optimizer model. With a second GPU reserved for
+    # Teacher, avoid Transformers' single-process DataParallel auto-wrap.
+    if plan.config["teacher"].get("device") is not None:
+        args._n_gpu = 1
     trainer = SureVLGRPOTrainer(model=student, teacher_model=teacher, args=args,
                                 train_dataset=_dataset(plan.train_rows), processing_class=processor,
                                 proxy_config=plan.config["proxy"], reward_config=plan.config["reward"],
@@ -106,20 +119,26 @@ def run_training(plan: TrainingPlan) -> None:
                      "generation_terminators": stops,
                      "runtime_versions": runtime_versions,
                      "gradient_clip_max_norm": setting["max_grad_norm"],
+                     "student_device": str(trainer.accelerator.device),
+                     "teacher_device": str(next(trainer.teacher_model.parameters()).device),
+                     "student_world_size": trainer.accelerator.num_processes,
                      "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES")})
     manifest["source_commit"], manifest["source_worktree_dirty"] = _source_provenance()
     root = Path(__file__).resolve().parents[2]
     manifest["source_files_sha256"] = {str(path.relative_to(root)): _sha256(path) for path in sorted(root.rglob("*.py"))}
     tracker = None
     try:
-        tracker = ExperimentTracker(plan.config["tracking"], output_dir=plan.output_dir, run_config=manifest)
+        main_process = trainer.accelerator.is_main_process
+        tracker = ExperimentTracker(plan.config["tracking"] if main_process else {"backend": "none"},
+                                    output_dir=plan.output_dir, run_config=manifest)
         trainer.experiment_tracker = tracker
         manifest["tracking_run_url"] = tracker.run_url
         validation = GRPOValidationCallback(trainer, plan.validation_rows, plan.output_dir,
                                             plan.config["validation"], tracker)
         trainer.add_callback(validation)
         trainer.add_callback(ProxyTrackingCallback(trainer, tracker))
-        (plan.output_dir / "run_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+        if main_process:
+            (plan.output_dir / "run_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
         result = trainer.train()
         evidence = trainer.optimizer_evidence.summary()
         expected = setting["max_steps"]
@@ -132,15 +151,20 @@ def run_training(plan: TrainingPlan) -> None:
         if adam_step != expected or 0 not in validation.steps or expected not in validation.steps:
             raise RuntimeError("GRPO Adam/frozen-validation evidence does not agree")
         trainer.save_model()
-        processor.save_pretrained(plan.output_dir)
-        trainer.accelerator.unwrap_model(trainer.teacher_model).save_pretrained(plan.output_dir / "teacher_final")
+        if main_process:
+            processor.save_pretrained(plan.output_dir)
+            trainer.accelerator.unwrap_model(trainer.teacher_model).save_pretrained(plan.output_dir / "teacher_final")
         completed = {**manifest, "status": "completed", "optimizer_steps": expected,
                      "optimizer_evidence": evidence, "optimizer_state_max_step": adam_step,
                      "validation_optimizer_steps": validation.steps, "train_metrics": result.metrics}
-        (plan.output_dir / "training_completed.json").write_text(json.dumps(completed, ensure_ascii=False, indent=2) + "\n")
+        if main_process:
+            (plan.output_dir / "training_completed.json").write_text(json.dumps(completed, ensure_ascii=False, indent=2) + "\n")
+        trainer.accelerator.wait_for_everyone()
         tracker.finish(exit_code=0)
     except BaseException as error:
-        (plan.output_dir / "training_failed.json").write_text(json.dumps({
+        rank = int(os.environ.get("RANK", "0"))
+        failure_path = plan.output_dir / ("training_failed.json" if rank == 0 else f"training_failed_rank_{rank}.json")
+        failure_path.write_text(json.dumps({
             "status": "failed", "error_type": type(error).__name__, "error": str(error)}, ensure_ascii=False, indent=2) + "\n")
         if tracker is not None:
             tracker.finish(exit_code=1)

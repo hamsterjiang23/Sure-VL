@@ -51,13 +51,21 @@ class EMATeacher:
         student_parameters = dict(self.student.named_parameters())
         with torch.no_grad():
             for name, master in self.masters.items():
-                source = student_parameters[name].detach().to(device=master.device, dtype=master.dtype)
+                source = student_parameters[name].detach()
+                # The two-device recipe keeps Teacher on a separate GPU. Host
+                # staging avoids this server's failing peer/NCCL transport.
+                if source.device.type == master.device.type == "cuda" and source.device != master.device:
+                    source = source.cpu()
+                source = source.to(device=master.device, dtype=master.dtype)
                 master.mul_(self.decay).add_(source, alpha=1 - self.decay)
                 self.teacher_parameters[name].copy_(master)
             student_buffers = dict(self.student.named_buffers())
             for name, buffer in self.teacher.named_buffers():
                 if name in student_buffers and buffer.shape == student_buffers[name].shape:
-                    buffer.copy_(student_buffers[name].detach())
+                    source = student_buffers[name].detach()
+                    if source.device.type == buffer.device.type == "cuda" and source.device != buffer.device:
+                        source = source.cpu()
+                    buffer.copy_(source.to(device=buffer.device, dtype=buffer.dtype))
         self.teacher.eval()
         self.update_count += 1
 
