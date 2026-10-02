@@ -228,6 +228,15 @@ class SureVLGOLDTrainer(GOLDTrainer):  # type: ignore[misc,valid-type]
         real_prompt_ids = prompt_ids[0, prompt_mask[0]].to(device)
         if real_prompt_ids.numel() == 0:
             raise ValueError("teacher prompt has no tokens")
+        expected_prompt_ids = row.get("_expected_student_prompt_ids")
+        if expected_prompt_ids is not None and not torch.equal(
+            real_prompt_ids, expected_prompt_ids.to(device)
+        ):
+            raise RuntimeError("same-view baseline must use the exact encoded student prompt IDs")
+        trace = row.get("_teacher_input_trace")
+        if isinstance(trace, dict):
+            trace.update(prompt_tokens=int(real_prompt_ids.numel()),
+                         sampled_prefix_tokens=int(content_ids.numel()))
         teacher_ids = torch.cat((real_prompt_ids, content_ids.to(device)), dim=0).unsqueeze(0)
         teacher_mask = torch.ones_like(teacher_ids)
         teacher_kwargs = self._get_model_forward_kwargs(prompt_batch, exclude=self._SEQUENCE_KEYS)

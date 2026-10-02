@@ -142,6 +142,8 @@ class ProxyEvaluationTests(unittest.TestCase):
                     if not remaining:
                         return value
                     key, *rest = remaining
+                    if isinstance(key, Tensor):
+                        return [select(item, rest) for item, keep in zip(value, key.values) if keep]
                     if isinstance(key, slice):
                         return [select(item, rest) for item in value[key]]
                     return select(value[key], rest)
@@ -150,6 +152,9 @@ class ProxyEvaluationTests(unittest.TestCase):
 
             def to(self, _device):
                 return self
+
+            def bool(self):
+                return Tensor([bool(value) for value in self.values])
 
             def tolist(self):
                 return self.values

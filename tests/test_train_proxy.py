@@ -19,6 +19,7 @@ from sure_vl.train_proxy import (
     _QWEN35_NONTHINKING_SUFFIX,
     _QWEN35_THINKING_SUFFIX,
     _ensure_processor_chat_template,
+    _source_provenance,
     configure_generation_terminators,
     configure_nonthinking_template,
     load_plan,
@@ -39,6 +40,13 @@ def _example(example_id: str, split: str, student: str, teacher: str) -> dict:
 
 
 class ProxyTrainingPreflightTests(unittest.TestCase):
+    def test_copied_source_cannot_inherit_enclosing_clean_git_identity(self):
+        with patch("sure_vl.train_proxy.subprocess.run", return_value=SimpleNamespace(
+            returncode=0, stdout="/unrelated/enclosing/repository\n",
+        )) as git:
+            self.assertEqual(_source_provenance(), (None, None))
+            self.assertEqual(git.call_count, 1)
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

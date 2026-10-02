@@ -7,13 +7,15 @@ content, including malformed outputs, and never the confidence report.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from .proxy_method import empty_visual_proxy, visual_certainty_proxy
-from .proxy_prompt import build_proxy_masks, parse_proxy_completion, split_proxy_generated_eos
+from .proxy_prompt import (build_proxy_masks, build_proxy_teacher_messages,
+                           parse_proxy_completion, split_proxy_generated_eos)
 from .proxy_protocol import ProxyExample, verify_proxy_answer
 from .teacher_ema import OptimizerEvidenceCallback
 from .trl_distillation import opsd_signal_diagnostics
@@ -34,6 +36,33 @@ class RolloutAssessment:
     report_reward: float
     opsd_loss_sum: Any
     content_token_count: int
+
+
+def proxy_teacher_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Build the teacher-only input without rewriting sampled completion IDs.
+
+    q+ has its own teacher template, privileged image, and optional evidence.
+    q- matches the student's entire conditioning (including its template) so
+    the baseline measures EMA/model drift under identical inputs.
+    """
+    payload = row["example_payload"]
+    example = ProxyExample.from_dict(json.loads(payload) if isinstance(payload, str) else payload)
+    privileged = row.get("_proxy_teacher_privileged", True)
+    if type(privileged) is not bool:
+        raise ValueError("teacher privilege flag must be boolean")
+    prepared = dict(row)
+    if privileged:
+        prepared["prompt"] = build_proxy_teacher_messages(example.question, example.teacher_evidence)
+    else:
+        prepared["teacher_image"] = row["student_image"]
+        # Keep the exact student prompt, not a second teacher role instruction.
+        prepared["prompt"] = row["prompt"]
+    return prepared
+
+
+def _conditioning_digest(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                     allow_nan=False).encode("utf-8")).hexdigest()
 
 
 class ProxyGOLDTrainer(SureVLGOLDTrainer):
@@ -71,7 +100,14 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
 
     def _teacher_logits_for_content(self, row: Mapping[str, Any], content_ids: Any) -> Any:
         # The parent slice otherwise retains the full prompt-logit allocation.
-        return super()._teacher_logits_for_content(row, content_ids).detach().clone()
+        prepared = proxy_teacher_row(row)
+        trace: dict[str, int] = {}
+        prepared["_teacher_input_trace"] = trace
+        if not row.get("_proxy_teacher_privileged", True):
+            prepared["_expected_student_prompt_ids"] = row.get("_student_prompt_ids")
+        result = super()._teacher_logits_for_content(prepared, content_ids).detach().clone()
+        self._proxy_last_teacher_input = trace
+        return result
 
     def measure_rollout(self, row: Mapping[str, Any], completion_ids: Any,
                         selected_student_logits: Any, *, diagnostics: bool = False) -> RolloutAssessment:
@@ -104,9 +140,11 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
         kl_sum = selected_student_logits.sum() * 0.0
         opsd: dict[str, float] = {"content_tokens": float(count), "sampled_positions": 0.0}
         clear_logits = None
+        clear_input, baseline_input = {}, {}
         if count and (self.opsd_weight > 0 or bool(vision.any())):
             content_ids = completion_ids[:count]
             clear_logits = self._teacher_logits_for_content(row, content_ids)
+            clear_input = dict(getattr(self, "_proxy_last_teacher_input", {}))
             vision_positions = vision[:count].nonzero(as_tuple=True)[0]
             if vision_positions.numel():
                 restricted_logits = None
@@ -114,8 +152,10 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
                     # q- uses the same EMA teacher and the same sampled prefix.
                     # Only the prefix through the last vision position is needed.
                     last = int(vision_positions[-1].item()) + 1
-                    restricted_row = dict(row, teacher_image=row["student_image"])
+                    restricted_row = dict(row, teacher_image=row["student_image"],
+                                          _proxy_teacher_privileged=False)
                     restricted_all = self._teacher_logits_for_content(restricted_row, content_ids[:last])
+                    baseline_input = dict(getattr(self, "_proxy_last_teacher_input", {}))
                     restricted_logits = restricted_all.index_select(0, vision_positions)
                     del restricted_all
                 proxy = visual_certainty_proxy(
@@ -174,6 +214,20 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
             "visual_confidence_score": parsed.visual_confidence,
             "answer_confidence_score": parsed.answer_confidence,
             "confidence_score_max": 10,
+            "teacher_conditioning": {
+                "privileged_image": example.teacher_image,
+                "teacher_evidence_present": example.teacher_evidence is not None,
+                "teacher_evidence_sha256": (None if example.teacher_evidence is None
+                                             else _conditioning_digest(example.teacher_evidence)),
+                "student_prompt_sha256": _conditioning_digest(row["prompt"]),
+                "teacher_prompt_sha256": _conditioning_digest(proxy_teacher_row(row)["prompt"]),
+                "baseline_prompt_sha256": _conditioning_digest(row["prompt"]),
+                "baseline_image": example.student_image,
+                "privileged_input": clear_input,
+                "baseline_input": baseline_input,
+                "baseline": "same EMA, exact student prompt and image, no privileged evidence",
+                "gap_scope": "combined image, evidence, teacher-template and parameter differences; heuristic baseline correction",
+            },
             "visual_proxy": proxy.certainty, "proxy_fallback": proxy.fallback,
             "vision_tokens": proxy.vision_token_count, "content_tokens": count,
             "generated_tokens": int(completion_ids.numel()), "format_errors": errors,
@@ -204,7 +258,10 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
                 raise ValueError("sampled completion must be a contiguous span after its prompt")
             completion = ids[index, positions]
             selected = outputs.logits[index, positions - 1, :]
-            measured = self.measure_rollout(row, completion, selected, diagnostics=True)
+            prefix_end = int(positions[0]) if positions.numel() else ids.shape[1]
+            prompt_ids = ids[index, :prefix_end][inputs["attention_mask"][index, :prefix_end].bool()]
+            measured_row = dict(row, _student_prompt_ids=prompt_ids)
+            measured = self.measure_rollout(measured_row, completion, selected, diagnostics=True)
             records.append(measured.record)
             logps = F.log_softmax(selected.float(), dim=-1).gather(-1, completion.unsqueeze(-1)).squeeze(-1)
             policies.append(-measured.content_reward * logps[measured.content_mask].sum()

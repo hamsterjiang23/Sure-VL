@@ -1,0 +1,101 @@
+{
+  "validation_kind": "synthetic fixture; fixed completion; zero optimizer updates",
+  "model": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "chat_template_sha256": "cb3fcc9eabdfc23ac1ff762bc33a591e9fa146381f13c171aaf4454047ddb3c1",
+  "enable_thinking": false,
+  "view": {
+    "kind": "vision_opd_evidence_crop_2x",
+    "source_bbox_xyxy": [
+      10,
+      18,
+      72,
+      80
+    ],
+    "source_image_size": [
+      192,
+      128
+    ],
+    "bbox_coordinate_space": "EXIF-oriented source RGB pixels, half-open xyxy",
+    "crop_size": [
+      62,
+      62
+    ],
+    "teacher_image_size": [
+      124,
+      124
+    ],
+    "crop_resize_scale": 2,
+    "crop_interpolation": "Pillow.Image.Resampling.LANCZOS",
+    "student_overlay": {
+      "color_rgb": [
+        255,
+        0,
+        0
+      ],
+      "line_width": 2
+    },
+    "student_image_hint": "Only focus on the region inside the red bounding box."
+  },
+  "source_rgb_sha256": "4c53465ebba349a48b90569edf98988966e80220a9a7272d6042f0f2490ff2a7",
+  "finite_logits": true,
+  "exact_baseline_prompt_ids_checked": true,
+  "teacher_logits_detached": true,
+  "assessment": {
+    "id": "synthetic-routing-only",
+    "raw_completion": "<vision>A blue circle is visible.</vision><answer>blue</answer><confidence><visual_confidence>8</visual_confidence><answer_confidence>8</answer_confidence></confidence>",
+    "vision_text": "A blue circle is visible.",
+    "answer": "blue",
+    "answer_correct": true,
+    "answer_label_available": true,
+    "visual_confidence": 0.8,
+    "answer_confidence": 0.8,
+    "visual_confidence_score": 8,
+    "answer_confidence_score": 8,
+    "confidence_score_max": 10,
+    "teacher_conditioning": {
+      "privileged_image": "synthetic-crop.png",
+      "teacher_evidence_present": true,
+      "teacher_evidence_sha256": "ddf7bae8e40b92c2bebaf63d49f56a89e6a0fe811a227199c3e5fbd63c8aeb25",
+      "student_prompt_sha256": "867838458d1191fd889a7ffd708400174a0d1da3a18d18dd551d65cdd171baf2",
+      "teacher_prompt_sha256": "e0a37ee21060463f5b602474e8f840fdc0996c64941087d4593176c83712f131",
+      "baseline_prompt_sha256": "867838458d1191fd889a7ffd708400174a0d1da3a18d18dd551d65cdd171baf2",
+      "baseline_image": "synthetic-full.png",
+      "privileged_input": {
+        "prompt_tokens": 390,
+        "sampled_prefix_tokens": 15
+      },
+      "baseline_input": {
+        "prompt_tokens": 319,
+        "sampled_prefix_tokens": 7
+      },
+      "baseline": "same EMA, exact student prompt and image, no privileged evidence",
+      "gap_scope": "combined image, evidence, teacher-template and parameter differences; heuristic baseline correction"
+    },
+    "visual_proxy": 0.6310069134816652,
+    "proxy_fallback": false,
+    "vision_tokens": 4,
+    "content_tokens": 15,
+    "generated_tokens": 40,
+    "format_errors": [],
+    "proxy_components": {
+      "raw_js": 0.34406813979148865,
+      "baseline_js": 1.6716432682528648e-08,
+      "corrected_gap": 0.34406813979148865,
+      "teacher_entropy": 0.1163702979683876,
+      "uncertainty": 0.23021923005580902
+    },
+    "reward": {
+      "utility": 1.0,
+      "answer_score": -0.03999999999999998,
+      "visual_score": -0.028558663290993422,
+      "report": -0.0685586632909934,
+      "total": 0.9314413367090066,
+      "format_penalty": 0.0
+    },
+    "opsd": {
+      "content_tokens": 15.0,
+      "sampled_positions": 0.0,
+      "clipped_loss_mean": 0.09039770066738129
+    }
+  }
+}

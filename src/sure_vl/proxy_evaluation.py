@@ -202,6 +202,7 @@ def evaluate_proxy_subset(
                 prompt_length = int(input_ids.shape[1])
                 if prompt_length == 0:
                     raise RuntimeError(f"empty prompt for {example_id}")
+                scoring_row["_student_prompt_ids"] = input_ids[0, encoded["attention_mask"][0].bool()]
                 with torch.random.fork_rng(devices=gpu_devices):
                     torch.manual_seed(_generation_seed(seed, example_id))
                     generated = model.generate(

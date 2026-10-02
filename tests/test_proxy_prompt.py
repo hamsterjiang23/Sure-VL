@@ -1,9 +1,10 @@
 import unittest
 
 from sure_vl.proxy_prompt import (
-    build_proxy_masks, build_proxy_prompt, parse_proxy_completion, split_proxy_generated_eos,
+    build_proxy_masks, build_proxy_prompt, build_proxy_teacher_messages,
+    parse_proxy_completion, split_proxy_generated_eos,
 )
-from sure_vl.proxy_protocol import ProxyExample, verify_proxy_answer
+from sure_vl.proxy_protocol import ProxyExample, ProxyProtocolError, verify_proxy_answer
 
 
 def _example() -> ProxyExample:
@@ -86,6 +87,55 @@ class ProxyPromptTests(unittest.TestCase):
         self.assertTrue(parsed_example.format_valid)
         self.assertEqual(parsed_example.answer, "umbrella")
         self.assertEqual((parsed_example.visual_confidence, parsed_example.answer_confidence), (8, 7))
+
+    def test_student_hint_precedes_question_and_teacher_evidence_is_absent(self) -> None:
+        raw = _example().to_dict()
+        raw["student_image_hint"] = "Only focus on the region inside the red bounding box."
+        raw["teacher_evidence"] = {"secret_evidence_marker": "private scene graph"}
+        prompt = build_proxy_prompt(ProxyExample.from_dict(raw))
+        self.assertIn(raw["student_image_hint"], prompt)
+        self.assertLess(prompt.index(raw["student_image_hint"]), prompt.index("Question: Which shape?"))
+        self.assertTrue(prompt.endswith("Question: Which shape?"))
+        self.assertNotIn("secret_evidence_marker", prompt)
+        self.assertNotIn("private scene graph", prompt)
+
+    def test_teacher_messages_are_distinct_and_privileged_evidence_is_scoped(self) -> None:
+        evidence = {"scene_graph": [{"shape": "rectangle", "id": "evidence-1"}]}
+        messages = build_proxy_teacher_messages("Which shape?", evidence)
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0]["role"], "user")
+        self.assertEqual(messages[0]["content"][0], {"type": "image"})
+        teacher_text = messages[0]["content"][1]["text"]
+        self.assertIn("visual teacher", teacher_text)
+        self.assertIn("question-relevant close-up", teacher_text)
+        self.assertIn("do not infer unseen global facts", teacher_text)
+        self.assertIn("evidence-1", teacher_text)
+        self.assertIn("integers from 0 to 10", teacher_text)
+        self.assertIn("<vision>", teacher_text)
+        self.assertIn("<answer>umbrella</answer>", teacher_text)
+        self.assertIn("<visual_confidence>8</visual_confidence>", teacher_text)
+        self.assertIn("<answer_confidence>", teacher_text)
+        self.assertTrue(teacher_text.endswith("Question: Which shape?"))
+        self.assertNotIn("circle", teacher_text.lower())
+        self.assertNotIn("<think>", teacher_text)
+        self.assertNotEqual(teacher_text, build_proxy_prompt(_example()))
+
+        baseline = build_proxy_teacher_messages("Which shape?", evidence, privileged=False)
+        baseline_text = baseline[0]["content"][1]["text"]
+        self.assertIn("visual teacher", baseline_text)
+        self.assertIn("Ground the description", baseline_text)
+        self.assertNotIn("evidence-1", baseline_text)
+        self.assertNotIn("close-up", baseline_text)
+        self.assertNotIn("enhanced", baseline_text)
+        self.assertTrue(baseline_text.endswith("Question: Which shape?"))
+
+    def test_teacher_messages_validate_inputs(self) -> None:
+        with self.assertRaisesRegex(ProxyProtocolError, "question"):
+            build_proxy_teacher_messages(" ")
+        with self.assertRaisesRegex(ProxyProtocolError, "privileged"):
+            build_proxy_teacher_messages("Which shape?", privileged=1)
+        with self.assertRaisesRegex(ProxyProtocolError, "NaN"):
+            build_proxy_teacher_messages("Which shape?", {"score": float("nan")})
 
     def test_valid_output_and_exact_three_masks(self) -> None:
         text = _completion()

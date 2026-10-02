@@ -1,0 +1,58 @@
+{
+  "evidence_type": "completed_small_model_pipeline_pilot",
+  "audited_on": "2026-10-02",
+  "remote_output_dir": "/data/LHJ/Sure-VL/outputs/qwen35-08b-proxy-100step-fp32-score10-v6",
+  "source_commit": "7d8e2948e1abc9a7c7ad2cf0880dbca60f0010ce",
+  "source_worktree_dirty": false,
+  "config_sha256": "12108a7daaf63c221e98d3c153547570075f556c01c4fcc1b2ea6adc3e261062",
+  "train_manifest_sha256": "c60ed6a10301bb15a79582ffb96a6c9901a3b97708b7a43748bdfc157808ec60",
+  "validation_manifest_sha256": "9670b23a92b0a3f4a61b6758dfc1c453d6f2aacf8e143df453973523807bc8eb",
+  "validation_subset_sha256": "1770f3bfea7585ca06df18e8fe4915ccb52d54629720c304cd3bf1d0f6c0821e",
+  "validation_subset_size": 8,
+  "model": "Qwen3.5-0.8B",
+  "device": "Tesla V100S-PCIE-32GB GPU 0",
+  "optimizer": {
+    "attempted_steps": 100,
+    "successful_updates": 100,
+    "skipped_updates": 0,
+    "ema_updates": 100,
+    "final_adam_state_step": 100
+  },
+  "train_attempts": {
+    "count": 100,
+    "nonfallback_proxy_count": 8,
+    "nonfallback_proxy_mean": 0.8974844006792694,
+    "nonfallback_proxy_variance": 0.000990745598045865,
+    "nonfallback_raw_js_mean": 0.036544205596108006,
+    "nonfallback_baseline_js_mean": 0.024427413704713342,
+    "nonfallback_corrected_gap_mean": 0.0148034977840604,
+    "nonfallback_teacher_entropy_mean": 0.09397562031515783,
+    "answer_label_available_count": 2,
+    "nonfallback_with_answer_label_count": 1,
+    "both_reports_count": 16,
+    "format_clean_count": 0,
+    "opsd_positive_content_token_count": 94,
+    "nonfallback_optimizer_steps_before_update": [1, 2, 3, 4, 5, 7, 8, 10]
+  },
+  "validation": [
+    {"step": 0, "n": 8, "successful_updates": 0, "ema_updates": 0, "adam_step": 0, "correct_answers": 2, "answer_labels": 4, "nonfallback_proxy": 3, "visual_reports": 0, "answer_reports": 1, "both_reports": 0, "format_clean": 0, "generation_cap_hits": 0, "opsd_valid_count": 8, "proxy_mean": 0.9199843333953361, "proxy_variance": 0.0007439301929232337, "raw_js_mean": 0.010004196616596435, "baseline_js_mean": 1.2239309604821663e-8, "corrected_gap_mean": 0.010004184349517165, "teacher_entropy_mean": 0.07384031715472493},
+    {"step": 20, "n": 8, "successful_updates": 20, "ema_updates": 20, "adam_step": 20, "correct_answers": 0, "answer_labels": 0, "nonfallback_proxy": 0, "visual_reports": 8, "answer_reports": 8, "both_reports": 8, "format_clean": 0, "generation_cap_hits": 0, "opsd_valid_count": 3, "proxy_mean": null, "proxy_variance": null, "raw_js_mean": null, "baseline_js_mean": null, "corrected_gap_mean": null, "teacher_entropy_mean": null},
+    {"step": 40, "n": 8, "successful_updates": 40, "ema_updates": 40, "adam_step": 40, "correct_answers": 0, "answer_labels": 0, "nonfallback_proxy": 0, "visual_reports": 4, "answer_reports": 4, "both_reports": 4, "format_clean": 0, "generation_cap_hits": 4, "opsd_valid_count": 8, "proxy_mean": null, "proxy_variance": null, "raw_js_mean": null, "baseline_js_mean": null, "corrected_gap_mean": null, "teacher_entropy_mean": null},
+    {"step": 60, "n": 8, "successful_updates": 60, "ema_updates": 60, "adam_step": 60, "correct_answers": 0, "answer_labels": 0, "nonfallback_proxy": 0, "visual_reports": 0, "answer_reports": 0, "both_reports": 0, "format_clean": 0, "generation_cap_hits": 6, "opsd_valid_count": 8, "proxy_mean": null, "proxy_variance": null, "raw_js_mean": null, "baseline_js_mean": null, "corrected_gap_mean": null, "teacher_entropy_mean": null},
+    {"step": 80, "n": 8, "successful_updates": 80, "ema_updates": 80, "adam_step": 80, "correct_answers": 0, "answer_labels": 0, "nonfallback_proxy": 0, "visual_reports": 0, "answer_reports": 0, "both_reports": 0, "format_clean": 0, "generation_cap_hits": 5, "opsd_valid_count": 8, "proxy_mean": null, "proxy_variance": null, "raw_js_mean": null, "baseline_js_mean": null, "corrected_gap_mean": null, "teacher_entropy_mean": null},
+    {"step": 100, "n": 8, "successful_updates": 100, "ema_updates": 100, "adam_step": 100, "correct_answers": 0, "answer_labels": 0, "nonfallback_proxy": 0, "visual_reports": 0, "answer_reports": 0, "both_reports": 0, "format_clean": 0, "generation_cap_hits": 3, "opsd_valid_count": 8, "proxy_mean": null, "proxy_variance": null, "raw_js_mean": null, "baseline_js_mean": null, "corrected_gap_mean": null, "teacher_entropy_mean": null}
+  ],
+  "calibration_metric_valid_pairs_at_all_validation_steps": 0,
+  "remote_artifact_sha256": {
+    "run_manifest.json": "b6d972ef6423d74ff90fcbb998e9867baeda491fb47e6f8794320984d05c2931",
+    "training_completed.json": "2ce9965b3298b779e7a4a3d2b45feb95bc415c5300b2426066d8673cc8306a8b",
+    "proxy_train_attempts_rank_0.jsonl": "b1937a52c5ea932cab2c9cdad2403969e773c7e69ceba3d6808d12a40bd74cbd",
+    "proxy_validation_metrics.jsonl": "801db5f464a5b1f3e94b8e73ab142dafff0e9abb8d14e49a054436831e2aaec3",
+    "proxy_validation_attempts_step_000000.jsonl": "8949038761e955760aee13615933dc2c8422f4572f520fec8170e8ffd90cd8d8",
+    "proxy_validation_attempts_step_000020.jsonl": "f50b850f32da3f91ca819afb9fd986dcb6679a1953a1bdb3463f02667a800319",
+    "proxy_validation_attempts_step_000040.jsonl": "4a2c039d1ae47c57d674df279c6bbf87d34e604cf0b24fb0a05fff4984bd6353",
+    "proxy_validation_attempts_step_000060.jsonl": "166b7dc78f4b0c67bbee427afb0011d39192ae3e0c35f06c571269fd93bcd204",
+    "proxy_validation_attempts_step_000080.jsonl": "e4a1afd254cd2b2e2b87d085e7f16aafc4807998dfedd8da297bce86bec865cb",
+    "proxy_validation_attempts_step_000100.jsonl": "dd405686d02427075daca5aea0091c457d791368da1ac4737aa22700ae6b8818"
+  }
+}

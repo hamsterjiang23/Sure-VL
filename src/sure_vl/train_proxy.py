@@ -60,6 +60,13 @@ def _runtime_versions() -> dict[str, str | None]:
 
 def _source_provenance() -> tuple[str | None, bool | None]:
     source_root = Path(__file__).resolve().parents[2]
+    git_root = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"], cwd=source_root, capture_output=True, text=True,
+    )
+    if git_root.returncode != 0 or Path(git_root.stdout.strip()).resolve() != source_root:
+        # A copied package beneath an ignored outputs directory must not
+        # inherit the enclosing repository's unrelated clean commit identity.
+        return None, None
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=source_root, capture_output=True, text=True,
     )
@@ -468,6 +475,11 @@ def run_training(plan: TrainingPlan) -> None:
     run_record["chat_template_sha256"] = template_sha256
     run_record["enable_thinking"] = False
     run_record["confidence_report"] = {"minimum": 0, "maximum": 10, "integer": True, "normalization_divisor": 10}
+    run_record["teacher_conditioning"] = {
+        "privileged": "separate teacher template, paired teacher image, optional teacher_evidence",
+        "baseline": "same EMA model with exact student prompt IDs and student image; no privileged evidence",
+        "gap_scope": "image/evidence/template conditioning plus model drift; JS subtraction is heuristic",
+    }
     run_record["sampling"] = {
         "temperature": setting["rollout_temperature"],
         "top_p": setting["rollout_top_p"],
@@ -477,6 +489,9 @@ def run_training(plan: TrainingPlan) -> None:
         float(trainer.accelerator.scaler.get_scale()) if setting["fp16"] else None
     )
     run_record["source_commit"], run_record["source_worktree_dirty"] = _source_provenance()
+    run_record["source_files_sha256"] = {
+        path.name: _sha256(path) for path in sorted(Path(__file__).parent.glob("*.py"))
+    }
     run_record["runtime_versions"] = _runtime_versions()
     run_record["cuda_visible_devices"] = os.environ.get("CUDA_VISIBLE_DEVICES")
     cuda = getattr(torch, "cuda", None)

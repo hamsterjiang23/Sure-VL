@@ -16,7 +16,9 @@ The two report integers are divided by 10 before scoring, so `v` and `r` in the 
 
 The linked derivation writes content as `(Z,T,y)` and shows a `<reasoning>` section. The active nonthinking pilot sets `T` to the empty sequence; its visual proxy depends on `Z` tokens and the answer check depends on `y`, so neither requires generated chain-of-thought text. The parser can recover fields from older `<think>` outputs for audits, but flags them as noncanonical for this pilot.
 
-An EMA Teacher sees the paired clear image `I+` and scores the **same Student token prefixes**. On `<vision>` tokens, normalized Student–Teacher Jensen–Shannon divergence, an optional same-view Teacher baseline, and clear-view Teacher entropy form a detached visual certainty target `S_vis`. A missing or too-short visual span receives `S_vis=0`. The target is recomputed from each rollout; it is not a stored label.
+An EMA Teacher sees a privileged image `I+`, optional evidence `E+` (for example, a scene graph), and a **separate Teacher prompt**. It scores the **same Student completion token prefixes** without generating a replacement trajectory. On `<vision>` tokens, normalized Student–Teacher Jensen–Shannon divergence, an optional same-view Teacher baseline, and privileged-view Teacher entropy form a detached visual certainty target `S_vis`. A missing or too-short visual span receives `S_vis=0`. The target is recomputed from each rollout; it is not a stored label.
+
+The baseline `q-` uses the same EMA model with the **exact Student prompt IDs, Student image, and no privileged evidence**. Its prompt IDs are checked at runtime. With different Teacher/Student templates, the corrected gap reflects image, evidence, and template conditioning as well as model drift. JS subtraction is a heuristic correction; it does not isolate a purely visual causal effect.
 
 - `visual_confidence` (`v`) estimates **teacher-grounded internal visual certainty**. It is **not** the probability that the free-text visual description is factually correct.
 - `answer_confidence` (`r`) estimates the **unconditional probability that the final answer is correct**. It is not conditioned on a visual-correctness event.
@@ -25,17 +27,33 @@ The first-version task reward is `R = Y - (r-Y)^2 - (v-S_vis)^2`, where `Y` is c
 
 The formula above applies to valid reports and extractable answers. A missing report or unavailable answer label receives the corresponding maximal squared-score penalty; malformed structure or an unusable visual span adds a configurable format penalty (default 1). The content policy receives answer utility plus report penalties, while the report policy receives the penalties. These fallbacks are explicit implementation choices. Missing labels and fallback proxy values are excluded from the corresponding calibration denominators.
 
-The output order and 0–10 scale follow [VL-Calibration's published prompt](https://github.com/Mr-Loevan/VL-Calibration/blob/main/examples/format_prompt/Standard_Decouple.jinja). Sure-VL adapts its visual section to a direct, brief description and changes the two report meanings to internal visual certainty and unconditional answer correctness. Broad training scale takes inspiration from [VL-Calibration](https://github.com/Mr-Loevan/VL-Calibration), paired restricted/clear views from [Vision-OPD](https://github.com/VisionOPD/Vision-OPD), and the distribution loss from original OPSD. [TRL GOLD 1.14.1](https://huggingface.co/docs/trl/v1.14.1/gold_trainer) handles VLM sampling and optimizer accumulation. This TRL API is experimental and pinned in `pyproject.toml`.
+The output order and 0–10 scale follow [VL-Calibration's published prompt](https://github.com/Mr-Loevan/VL-Calibration/blob/main/examples/format_prompt/Standard_Decouple.jinja). Sure-VL adapts its visual section to a direct, brief description and changes the two report meanings to internal visual certainty and unconditional answer correctness. Broad training scale takes inspiration from [VL-Calibration](https://github.com/Mr-Loevan/VL-Calibration), regional/global inputs from [Vision-OPD](https://github.com/VisionOPD/Vision-OPD), and the distribution loss from original OPSD. [TRL GOLD 1.14.1](https://huggingface.co/docs/trl/v1.14.1/gold_trainer) handles VLM sampling and optimizer accumulation. This TRL API is experimental and pinned in `pyproject.toml`.
+
+## Privileged image and Teacher prompt
+
+[Vision-OPD section 3.2](https://arxiv.org/html/2605.18740v1) isolates a question-relevant evidence region and resizes the crop by **2x in width and height**. The Student receives the full image with a red bounding box and a spatial hint; the Teacher receives the crop. This is a regional perception advantage. The public [data preparation code](https://github.com/VisionOPD/Vision-OPD/blob/06860e69b5ed9dc24e96ca5c855f3a4ef25976aa/scripts/prepare_data.py) consumes precomputed `teacher_images`; it does not publish the crop-generation or interpolation implementation. Sure-VL implements the stated crop/2x method with LANCZOS interpolation as an explicit project choice.
+
+The Teacher template in `proxy_prompt.py` instructs it to describe question-relevant facts from its local image and available evidence, respect the visible region's scope, and avoid inferring unseen global facts. The Student template asks for evidence from its ordinary image. Optional `teacher_evidence` is serialized into the Teacher prompt only; `accepted_answers` is used solely by the answer verifier. Both templates keep direct output and the same 0–10 integer report contract.
+
+Build a new paired dataset from JSONL with `id`, `split`, `source_image`, `question`, `accepted_answers`, `evidence_bbox_xyxy` (source-image pixel coordinates), and optional `teacher_evidence`:
+
+```bash
+uv run --extra train python scripts/build_privileged_proxy_data.py \
+  --input-jsonl /path/to/source.jsonl \
+  --output-dir /data/LHJ/Sure-VL/data/privileged_proxy_v1
+```
+
+The evidence region must contain the information needed for the question. The builder requires an explicit region; it does not invent a question-relevant box. `--allow-no-roi` explicitly permits an unchanged image and records `no_evidence_roi`. Image transforms, source/manifest hashes, and evidence presence are recorded in `provenance.json`. Evidence can be text or a JSON object/list, including a dataset-provided scene graph. This input route does not itself validate a CLEVR-Math scene graph source or generate missing annotations.
 
 ## Data contract
 
-Each JSONL manifest contains one split and six fields per example:
+Each JSONL manifest contains one split and six required fields per example, plus optional `student_image_hint` and `teacher_evidence`:
 
 ```json
 {"id":"sample-1","split":"train","student_image":"images/sample-1.restricted.png","teacher_image":"images/sample-1.clear.png","question":"What shape is shown?","accepted_answers":["circle"]}
 ```
 
-Image paths are resolved relative to the manifest. The images must differ; train and validation cannot reuse IDs or image paths. `accepted_answers` is frozen before training and checked by normalized exact matching. This strict rule can reject semantically equivalent answers with extra units, punctuation, or unlisted aliases; audit those cases before treating pilot accuracy as a research result. **No visual-fact slots, binary visual label `V`, or static proxy target are required.** An unextractable answer is not silently assigned `Y=0`. A malformed or absent confidence block does not disable content Teacher supervision.
+Image paths are resolved relative to the manifest. Student and Teacher paths must be distinct; train and validation cannot reuse IDs or image paths. `accepted_answers` is frozen before training and checked by normalized exact matching. This strict rule can reject semantically equivalent answers with extra units, punctuation, or unlisted aliases; audit those cases before treating pilot accuracy as a research result. **No visual-fact slots, binary visual label `V`, or static proxy target are required.** An unextractable answer is not silently assigned `Y=0`. A malformed or absent confidence block does not disable content Teacher supervision.
 
 The [official VL-Calibration-12K dataset](https://modelscope.cn/datasets/xiaowenyi/VL-Calibration-12K) supplies questions, answers, and images, but no restricted/clear pairs. `scripts/build_vlcalib_proxy_pilot.py` uses a frozen 16-train/8-validation selection, verifies source files and rows, and creates a restricted Student view by downsampling then upsampling the image. It writes manifests, image hashes, and `provenance.json`. This tiny selected pilot tests the pipeline; it is not a representative effectiveness benchmark. Its selection file contains older visual-fact annotations, but the proxy builder does not read or emit them.
 
@@ -96,6 +114,8 @@ These are launch instructions, not completed-run evidence. A completed 100-step 
 The proxy run selects a held-out subset by ID hash before observing outputs, then evaluates the same examples at step 0, every `validation.every_n_steps`, and the requested final step with fixed per-example generation seeds. The output directory records `run_manifest.json`, `proxy_validation_metrics.jsonl`, per-step raw attempt JSONL, training telemetry, and `training_completed.json` only after completion checks pass.
 
 The audit includes answer accuracy and answer-confidence Brier/ECE with effective label counts; visual-report squared/binned error **against the internal proxy**; proxy coverage and distribution; Teacher gap and entropy components; vision length, format coverage, and OPSD signal. Visual-proxy error is not factual visual calibration. Compare checkpoints only with the same frozen subset, split, proxy settings, and image restriction. The 16/8 pilot and a 100-step smoke can establish pipeline behavior, not benchmark improvement.
+
+The [original paired-view 100-update audit](docs/validation-proxy-100step-v1.md) confirms 100 successful optimizer and EMA updates with zero skips, but all eight validation outputs lose extractable answers and usable vision spans from step 20 onward. This is a failed output-quality diagnostic. It predates the new crop/evidence/Teacher-template implementation. The new [actual-model routing fixture](docs/evidence/privileged_teacher_fixture.json) checks a synthetic crop and scene graph with a fixed completion and zero optimizer updates; it is not a CLEVR-Math evaluation or an effectiveness result.
 
 ## Layout and legacy interface
 
