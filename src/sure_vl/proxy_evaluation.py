@@ -370,6 +370,9 @@ class ProxyValidationCallback(TrainerCallback):  # type: ignore[misc,valid-type]
                 })
                 with (self.output_dir / "proxy_validation_metrics.jsonl").open("a", encoding="utf-8") as output:
                     output.write(json.dumps(report, ensure_ascii=False, sort_keys=True) + "\n")
+                tracker = getattr(self.trainer, "experiment_tracker", None)
+                if tracker is not None and tracker.enabled:
+                    tracker.log_validation(report, optimizer_evidence, step)
             except Exception as error:
                 failure = error
                 failure_text = f"{type(error).__name__}: {error}"

@@ -16,6 +16,7 @@ from typing import Any
 
 from .proxy_data import assert_disjoint_proxy_manifests, build_proxy_dataset, manifest_to_proxy_rows
 from .proxy_protocol import ProxyProtocolError
+from .tracking import ExperimentTracker, validate_tracking_config
 
 
 DEFAULT_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "sure_vl_proxy_v1.json"
@@ -229,6 +230,7 @@ def load_plan(
     if config.get("method") != "internal_visual_proxy":
         raise ValueError("method must be internal_visual_proxy")
     model_id = config.get("model_id")
+    config["tracking"] = validate_tracking_config(config.get("tracking"))
     if not isinstance(model_id, str) or not model_id.strip():
         raise ValueError("model_id must be a nonempty string")
     revision = config.get("model_revision")
@@ -331,6 +333,21 @@ def load_plan(
 
 
 def run_training(plan: TrainingPlan) -> None:
+    """Finish cloud logging after validation/checkpoint gates or on failure."""
+    holder: dict[str, Any] = {}
+    try:
+        _run_training(plan, holder)
+        tracker = holder.get("tracker")
+        if tracker is not None:
+            tracker.finish(exit_code=0)
+    except BaseException:
+        tracker = holder.get("tracker")
+        if tracker is not None:
+            tracker.finish(exit_code=1)
+        raise
+
+
+def _run_training(plan: TrainingPlan, tracking_holder: dict[str, Any]) -> None:
     """Load the same starting checkpoint twice and launch one TRL GOLD run."""
     setting = plan.config["setting"]
     loss = plan.config["loss"]
@@ -496,6 +513,15 @@ def run_training(plan: TrainingPlan) -> None:
     run_record["cuda_visible_devices"] = os.environ.get("CUDA_VISIBLE_DEVICES")
     cuda = getattr(torch, "cuda", None)
     run_record["device_name"] = cuda.get_device_name(trainer.accelerator.device) if cuda is not None and cuda.is_available() else "cpu"
+    if trainer.accelerator.is_main_process:
+        from .proxy_tracking import ProxyTrackingCallback
+        tracker = ExperimentTracker(plan.config.get("tracking"), output_dir=plan.output_dir,
+                                    run_config=run_record)
+        tracking_holder["tracker"] = tracker
+        trainer.experiment_tracker = tracker
+        if tracker.enabled:
+            trainer.add_callback(ProxyTrackingCallback(trainer, tracker))
+            run_record["tracking_run_url"] = tracker.run_url
     if trainer.accelerator.is_main_process:
         with (plan.output_dir / "run_manifest.json").open("x", encoding="utf-8") as manifest:
             manifest.write(json.dumps(run_record, ensure_ascii=False, indent=2) + "\n")

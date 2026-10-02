@@ -57,6 +57,30 @@ Image paths are resolved relative to the manifest. Student and Teacher paths mus
 
 The [official VL-Calibration-12K dataset](https://modelscope.cn/datasets/xiaowenyi/VL-Calibration-12K) supplies questions, answers, and images, but no restricted/clear pairs. `scripts/build_vlcalib_proxy_pilot.py` uses a frozen 16-train/8-validation selection, verifies source files and rows, and creates a restricted Student view by downsampling then upsampling the image. It writes manifests, image hashes, and `provenance.json`. This tiny selected pilot tests the pipeline; it is not a representative effectiveness benchmark. Its selection file contains older visual-fact annotations, but the proxy builder does not read or emit them.
 
+### Official Vision-OPD pairs
+
+The current dataset route directly uses [Vision-OPD-6K](https://huggingface.co/datasets/yuanqianhao/Vision-OPD-6K), pinned to revision `eb5c1c2e7b9a7b6a619efe4161c7369c71bf8af4`. It contains 6,241 prebuilt Student/Teacher pairs and A–D answer labels. Sure-VL uses the provided Student full image and Teacher crop unchanged. `teacher_question` is an optional manifest field preserving the official clean Teacher question and all choices; the Student receives the official question with the red-box hint. Neither the correct option nor `extra_info.answer` enters a prompt. This dataset has no separate `teacher_evidence`, so it exercises the no-E branch.
+
+```bash
+uv run --extra train python scripts/fetch_vision_opd_pairs.py \
+  --source-root /data/LHJ/Sure-VL/data/vision_opd_6k_official \
+  --output-dir /data/LHJ/Sure-VL/data/vision_opd_proxy_40_v1
+```
+
+For a bounded V100 test, the fetcher downloads pinned archive prefixes, keeps only complete verified official PNG members, and freezes 32 training / 8 validation examples from available image pairs. It records archive sizes/hashes and selection provenance. The split groups by official original-image path and checks selected image hashes for overlap. This is an internal diagnostic holdout drawn from the official train split; prefix availability does not form a representative benchmark sample. To use an already extracted full dataset, run `scripts/build_vision_opd_proxy_data.py --source-root ... --output-dir ...` with the desired counts instead.
+
+### Online W&B monitoring
+
+```bash
+uv sync --extra train --extra tracking --frozen
+uv run --extra train --extra tracking sure-vl-train \
+  --config configs/qwen35_08b_v100_visionopd_smoke.json
+uv run --extra train --extra tracking sure-vl-train \
+  --config configs/qwen35_08b_v100_visionopd_100step.json
+```
+
+These recipes explicitly require online W&B and an authenticated account. Credentials stay in the normal SDK login store/environment. `tracking_run.json` records the cloud URL; offline initialization fails the tracking gate. The [metric registry](docs/metrics_registry.md) distinguishes training windows, fixed validation, actual optimizer/EMA counts, raw 0–10 reports, visual-proxy moments and effective denominators, teacher gap/entropy, rewards, and OPSD diagnostics. Missing calibration metrics are omitted rather than plotted as zero. Rank 0 uploads scalar summaries; each rank retains raw local JSONL evidence. Reference repositories and pinned commits are listed in `configs/reference_sources.json`.
+
 ## Install, build data, and preflight
 
 Use [uv](https://docs.astral.sh/uv/) for environments. The core package needs no training dependencies; the `train` extra supplies PyTorch, Transformers, datasets, Accelerate, and TRL.

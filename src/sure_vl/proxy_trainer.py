@@ -52,7 +52,9 @@ def proxy_teacher_row(row: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("teacher privilege flag must be boolean")
     prepared = dict(row)
     if privileged:
-        prepared["prompt"] = build_proxy_teacher_messages(example.question, example.teacher_evidence)
+        prepared["prompt"] = build_proxy_teacher_messages(
+            example.teacher_question or example.question, example.teacher_evidence,
+        )
     else:
         prepared["teacher_image"] = row["student_image"]
         # Keep the exact student prompt, not a second teacher role instruction.
@@ -271,6 +273,10 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
         policy = torch.stack(policies).mean()
         opsd = torch.stack(kl_sums).sum() / content_tokens if content_tokens else policy * 0.0
         loss = self.policy_weight * policy + self.opsd_weight * opsd
+        tracker = getattr(self, "experiment_tracker", None)
+        if tracker is not None and tracker.enabled:
+            for record in records:
+                tracker.record_rollout(record)
 
         def log(name: str, value: float) -> None:
             self._metrics["train"][f"sure_vl/rank_local/{name}"].append(float(value))

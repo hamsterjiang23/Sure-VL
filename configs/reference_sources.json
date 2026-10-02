@@ -1,0 +1,14 @@
+{
+  "Vision-OPD": {
+    "url": "https://github.com/VisionOPD/Vision-OPD",
+    "commit": "06860e69b5ed9dc24e96ca5c855f3a4ef25976aa"
+  },
+  "VL-Calibration": {
+    "url": "https://github.com/Mr-Loevan/VL-Calibration",
+    "commit": "d38e15869d3a95d5d0c8fa1627d9745e490685d6"
+  },
+  "OPSD": {
+    "url": "https://github.com/siyan-zhao/OPSD",
+    "commit": "ae7d2519e94920c4eb6206c0c26de46d9c50abae"
+  }
+}

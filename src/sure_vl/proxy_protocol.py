@@ -79,6 +79,7 @@ class ProxyExample:
     question: str
     accepted_answers: tuple[str, ...]
     student_image_hint: str | None = None
+    teacher_question: str | None = None
     teacher_evidence: str | dict[str, Any] | list[Any] | None = None
 
     def __post_init__(self) -> None:
@@ -95,6 +96,9 @@ class ProxyExample:
         if self.student_image_hint is not None:
             object.__setattr__(self, "student_image_hint",
                            _nonempty_text(self.student_image_hint, "student_image_hint"))
+        if self.teacher_question is not None:
+            object.__setattr__(self, "teacher_question",
+                           _nonempty_text(self.teacher_question, "teacher_question"))
         object.__setattr__(self, "teacher_evidence", validate_teacher_evidence(self.teacher_evidence))
 
     @classmethod
@@ -102,7 +106,7 @@ class ProxyExample:
         if not isinstance(raw, Mapping) or any(not isinstance(key, str) for key in raw):
             raise ProxyProtocolError("proxy example must be an object with string keys")
         required = {"id", "split", "student_image", "teacher_image", "question", "accepted_answers"}
-        allowed = required | {"student_image_hint", "teacher_evidence"}
+        allowed = required | {"student_image_hint", "teacher_question", "teacher_evidence"}
         missing = required - raw.keys()
         extra = raw.keys() - allowed
         if missing or extra:
@@ -112,6 +116,7 @@ class ProxyExample:
             teacher_image=raw["teacher_image"], question=raw["question"],
             accepted_answers=raw["accepted_answers"],
             student_image_hint=raw.get("student_image_hint"),
+            teacher_question=raw.get("teacher_question"),
             teacher_evidence=raw.get("teacher_evidence"),
         )
 
@@ -126,6 +131,8 @@ class ProxyExample:
         }
         if self.student_image_hint is not None:
             result["student_image_hint"] = self.student_image_hint
+        if self.teacher_question is not None:
+            result["teacher_question"] = self.teacher_question
         if self.teacher_evidence is not None:
             result["teacher_evidence"] = validate_teacher_evidence(self.teacher_evidence)
         return result

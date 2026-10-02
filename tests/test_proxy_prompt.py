@@ -67,6 +67,8 @@ class ProxyPromptTests(unittest.TestCase):
         self.assertIn("without reasoning", prompt)
         self.assertIn("at most 40 words", prompt)
         self.assertIn("output only the number", prompt)
+        self.assertLess(prompt.index("output only the option letter"),
+                        prompt.index("output only the number"))
         self.assertIn("one integer from 0 to 10", prompt)
         self.assertIn("internal certainty", prompt)
         self.assertIn("unconditional chance", prompt)
@@ -136,6 +138,32 @@ class ProxyPromptTests(unittest.TestCase):
             build_proxy_teacher_messages("Which shape?", privileged=1)
         with self.assertRaisesRegex(ProxyProtocolError, "NaN"):
             build_proxy_teacher_messages("Which shape?", {"score": float("nan")})
+
+    def test_distinct_student_and_teacher_questions_preserve_all_choices(self) -> None:
+        student_question = (
+            "What color is the object? Only focus on the objects inside the red bounding box. "
+            "A. red B. blue C. black D. white Answer with the option's letter."
+        )
+        teacher_question = (
+            "What color is the object?\n\nA. red\nB. blue\nC. black\nD. white"
+            "\n\nAnswer with the option's letter."
+        )
+        raw = _example().to_dict()
+        raw.update(question=student_question, teacher_question=teacher_question,
+                   accepted_answers=["B"])
+        example = ProxyExample.from_dict(raw)
+        student_text = build_proxy_prompt(example)
+        teacher_text = build_proxy_teacher_messages(
+            example.teacher_question or example.question,
+        )[0]["content"][1]["text"]
+        self.assertTrue(student_text.endswith(f"Question: {student_question}"))
+        self.assertTrue(teacher_text.endswith(f"Question: {teacher_question}"))
+        self.assertNotIn("red bounding box", teacher_text)
+        self.assertNotIn("\nB. blue", student_text)
+        self.assertIn("\nB. blue", teacher_text)
+        self.assertIn("output only the option letter", student_text)
+        self.assertIn("output only the option letter", teacher_text)
+        self.assertNotIn("accepted_answers", student_text + teacher_text)
 
     def test_valid_output_and_exact_three_masks(self) -> None:
         text = _completion()

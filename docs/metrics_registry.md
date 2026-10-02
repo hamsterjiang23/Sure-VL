@@ -1,0 +1,48 @@
+# Sure-VL experiment metrics
+
+`tracking.backend: wandb` publishes finite scalar summaries to an online W&B
+run. `tracking_run.json` records the run ID and URL after online initialization.
+The startup `run_config` is sent once to W&B as the run's frozen configuration,
+including caller-supplied protocol settings, provenance, and input hashes.
+The local `proxy_train_attempts_rank_*.jsonl` and
+`proxy_validation_metrics.jsonl` files remain the detailed audit records.
+Tracking disabled (`backend: none` or no tracking config) imports no W&B SDK.
+The caller creates the W&B tracker on world rank 0; W&B training windows cover
+that rank's on-policy attempts. Every rank retains its own
+`proxy_train_attempts_rank_*.jsonl`, so W&B rank-local curves must not be read
+as pooled multi-rank estimates.
+
+Every W&B log payload contains `optimizer/successful_updates`, and the
+`train/*`, `validation/*`, and `trainer/*` chart families use that metric as
+their X axis. This is the number of **successful optimizer updates**, including
+the EMA update only after a successful step. W&B's internal history step is
+never supplied explicitly. A skipped optimizer attempt can therefore produce
+another history event at the same X value. `trainer/state_global_step` and
+`optimizer/attempted_steps`, `optimizer/skipped_updates`, and
+`optimizer/teacher_ema_updates` expose the distinction.
+
+| Family | Source and scope | Main keys and denominators |
+| --- | --- | --- |
+| `train/*` | Buffered **training attempts** since the prior Trainer log event. Includes attempts from skipped updates; no claim of held-out performance. | `attempt_count` and `sample_count` count buffered completions. `answer_correct_count / sample_count` gives `answer_accuracy`; unavailable or unextractable answers are reported by `answer_label_unavailable_count`. `output_coverage/*` counts and rates use `sample_count`, except answer-report coverage where the eligible label count is explicit. |
+| `train/visual_proxy_*` | Student visual text compared with the frozen teacher-grounded internal proxy S. It is **not** factual visual accuracy. | `visual_proxy_eligible_count` excludes fallback S=0; `visual_proxy_pair_count` also requires a valid visual report. `visual_proxy_stats/mean` and `/variance` use eligible rows only. MSE, binned error, correlation, and report coverage use their named eligible/pair counts; missing values are omitted. |
+| `train/proxy_components/*` | Visual-token distribution diagnostics for nonfallback rows. | Each component has `/mean` and `/sample_count`, including `raw_js`, `baseline_js`, `corrected_gap`, `teacher_entropy`, and `uncertainty` when present. `corrected_gap` is the bounded heuristic correction, not a causal image-only estimate. |
+| `train/opsd_components/*` and `train/opsd_diagnostic_*` | Forward-KL and sparse diagnostic readings on generated **content** tokens, not confidence-report tokens. | Every component has its own `/sample_count`, including `raw_forward_kl_mean`, `clipped_loss_mean`, `clipped_vocabulary_fraction`, `top1_disagreement_rate`, and `weighted_logit_grad_l2` when measured. The last is a weighted gradient norm with respect to sampled **logits**, not model parameters or an observed update. `opsd_diagnostic_rows` counts rows with sampled diagnostic positions, `opsd_diagnostic_positions` sums those positions, and `opsd_diagnostic_coverage` divides by `attempt_count`. A zero position count means no sparse diagnostic sample, not zero KL. |
+| `train/visual_confidence_score/*`, `train/answer_confidence_score/*` | Parser-valid raw reports on the 0..10 integer scale, separate from normalized 0..1 calibration metrics. | `/valid_count`, `/coverage` (valid reports / `attempt_count`), `/mean` over valid reports only, and `/count_0` through `/count_10`. A missing mean remains absent when no report is valid; bins with zero observed reports are genuine zero counts. |
+| `train/reward_components/*` | The actual bounded answer, visual-proxy, format, and total reward terms on attempted completions. | Each `/mean` includes its own `/sample_count`; missing reports receive the trainer's explicit reward penalty, while calibration metrics leave their values missing. |
+| `train/answer_*`, `train/high_confidence_answer_errors/*` | Answer event Y and valid answer-confidence reports. | Brier/ECE10 use `answer_confidence_count` valid answer-report/label pairs. High-confidence error rate uses `high_confidence_answer_errors/sample_count`, which can be zero; then the rate is absent. |
+| `train/output_coverage/*`, `train/format_error_*_count`, `train/vision_tokens/*` | Structural output quality and token counts for the buffered attempts. | Counts and rates show format, report, nonfallback, and label coverage. Vision-token distribution uses all attempts, including zero-token outputs. |
+| `validation/*` | A frozen held-out subset at step 0 and configured intervals. | Same metric definitions as the training summary, but computed only on validation attempts. `validation/generation/hit_max_new_tokens_count` counts generation-cap hits and should be read with `validation/generation/sample_count`. The subset ID/hash and full attempts stay in local validation artifacts. |
+| `trainer/*` | Hugging Face Trainer logs and local loss measurements. | `trainer/loss`, `trainer/grad_norm`, `trainer/learning_rate`, `trainer/epoch`, and available `trainer/rank_local_policy_loss` / `rank_local_opsd_loss` are optimization telemetry. Rank-local means with empty-denominator placeholder zeros are intentionally not uploaded; aggregate windows above provide explicit counts. |
+
+Nested scalar keys from the summary, such as
+`validation/output_coverage/format_clean_rate` and
+`train/reward_components/total/mean`, are flattened under their family. Arrays
+such as calibration bins and risk-coverage curves, IDs, paths, strings,
+booleans, `None`, NaN, and infinity are not uploaded as scalar metrics. A metric
+without eligible samples is absent from W&B; the associated count remains 0.
+The JSONL audit artifacts retain full report structures and generated text.
+
+W&B online initialization must return a usable run ID and URL. Offline or
+disabled initialization raises an error and does not write
+`tracking_run.json`; it is not presented as an uploaded experiment. The module
+does not read or print API keys.

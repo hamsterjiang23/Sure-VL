@@ -44,6 +44,7 @@ def manifest_to_proxy_rows(
             student_image=student_path, teacher_image=teacher_path,
             question=example.question, accepted_answers=example.accepted_answers,
             student_image_hint=example.student_image_hint,
+            teacher_question=example.teacher_question,
             teacher_evidence=example.teacher_evidence,
         ).to_dict()
         rows.append({

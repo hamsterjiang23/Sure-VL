@@ -27,10 +27,12 @@ class ProxyProtocolTests(unittest.TestCase):
         self.assertNotIn("required_visual_facts", example.to_dict())
         self.assertNotIn("teacher_evidence", example.to_dict())
         self.assertNotIn("student_image_hint", example.to_dict())
+        self.assertNotIn("teacher_question", example.to_dict())
 
     def test_optional_hint_and_teacher_evidence_round_trip(self) -> None:
         raw = _example()
         raw["student_image_hint"] = "Only focus on the region inside the red bounding box."
+        raw["teacher_question"] = "What is shown?\n\nA. circle\nB. square\nC. triangle\nD. star\n\nAnswer with the option's letter."
         raw["teacher_evidence"] = {
             "scene_graph": {"objects": [{"color": "blue", "x": 1.5}], "relations": []},
             "available": True,
@@ -40,6 +42,7 @@ class ProxyProtocolTests(unittest.TestCase):
         self.assertEqual(example.teacher_evidence["scene_graph"]["objects"][0]["color"], "blue")
         self.assertEqual(example.to_dict()["student_image_hint"],
                          "Only focus on the region inside the red bounding box.")
+        self.assertEqual(example.to_dict()["teacher_question"], raw["teacher_question"])
         self.assertEqual(ProxyExample.from_dict(example.to_dict()).to_dict(), example.to_dict())
         for evidence in ("A clearly visible blue object.", ["object", {"count": 2}]):
             variant = _example()
@@ -57,6 +60,11 @@ class ProxyProtocolTests(unittest.TestCase):
         raw["student_image_hint"] = "  "
         with self.assertRaisesRegex(ProxyProtocolError, "student_image_hint"):
             ProxyExample.from_dict(raw)
+        for bad_question in ("  ", 42, []):
+            raw = _example()
+            raw["teacher_question"] = bad_question
+            with self.subTest(teacher_question=bad_question), self.assertRaisesRegex(ProxyProtocolError, "teacher_question"):
+                ProxyExample.from_dict(raw)
 
     def test_rejects_legacy_fact_slots_and_duplicate_answer_aliases(self) -> None:
         legacy = _example()
