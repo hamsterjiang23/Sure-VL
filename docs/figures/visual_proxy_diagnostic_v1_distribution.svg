@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="422" viewBox="0 0 1520 422">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#202936} .head{font-size:14px;font-weight:700} .label{font-size:12px} .axis{font-size:10px;fill:#667085}</style>
+<text x="30" y="27" class="head">Visual proxy diagnostic: per-example distributions</text>
+<rect x="30" y="274" width="1465" height="28" fill="#f7f9fc"/>
+<rect x="30" y="218" width="1465" height="28" fill="#f7f9fc"/>
+<rect x="30" y="162" width="1465" height="28" fill="#f7f9fc"/>
+<rect x="30" y="106" width="1465" height="28" fill="#f7f9fc"/>
+<text x="30" y="47" class="axis">Bars: 5th–95th percentile of equal-weight sample means. Dot: median. Scales differ by metric.</text>
+<text x="234" y="69" class="label">raw_js</text>
+<text x="386" y="69" class="axis">0.30</text>
+<line x1="236" y1="76" x2="236" y2="378" stroke="#d0d5dd"/>
+<line x1="400" y1="76" x2="400" y2="378" stroke="#d0d5dd"/>
+<line x1="265.80" y1="92.00" x2="341.41" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="296.00" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="269.73" y1="120.00" x2="355.63" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="296.72" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="266.15" y1="148.00" x2="340.89" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="292.63" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="266.39" y1="176.00" x2="341.81" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="296.07" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="269.69" y1="204.00" x2="357.61" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="299.31" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="262.75" y1="232.00" x2="301.50" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="279.73" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="249.06" y1="260.00" x2="318.03" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="267.81" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="261.18" y1="288.00" x2="294.00" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="276.26" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="241.74" y1="316.00" x2="248.74" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="246.31" cy="316.00" r="4" fill="#db6d26"/>
+<text x="414" y="69" class="label">baseline_js</text>
+<text x="566" y="69" class="axis">0.05</text>
+<line x1="416" y1="76" x2="416" y2="378" stroke="#d0d5dd"/>
+<line x1="580" y1="76" x2="580" y2="378" stroke="#d0d5dd"/>
+<line x1="449.97" y1="92.00" x2="491.44" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="477.08" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="448.48" y1="120.00" x2="480.63" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="469.46" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="452.23" y1="148.00" x2="492.90" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="474.60" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="451.59" y1="176.00" x2="491.21" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="477.32" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="448.15" y1="204.00" x2="482.10" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="468.15" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="449.97" y1="232.00" x2="491.44" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="477.08" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="449.97" y1="260.00" x2="491.44" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="477.08" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="449.97" y1="288.00" x2="491.44" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="477.08" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="449.97" y1="316.00" x2="491.44" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="477.08" cy="316.00" r="4" fill="#db6d26"/>
+<text x="594" y="69" class="label">corrected_gap</text>
+<text x="746" y="69" class="axis">0.28</text>
+<line x1="596" y1="76" x2="596" y2="378" stroke="#d0d5dd"/>
+<line x1="760" y1="76" x2="760" y2="378" stroke="#d0d5dd"/>
+<line x1="621.57" y1="92.00" x2="695.54" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="649.92" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="625.59" y1="120.00" x2="711.87" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="651.20" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="621.15" y1="148.00" x2="694.41" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="646.39" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="622.13" y1="176.00" x2="695.82" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="649.33" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="626.05" y1="204.00" x2="714.82" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="654.08" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="617.40" y1="232.00" x2="654.07" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="632.07" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="602.55" y1="260.00" x2="671.90" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="619.88" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="614.35" y1="288.00" x2="645.87" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="628.29" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="596.00" y1="316.00" x2="596.00" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="596.00" cy="316.00" r="4" fill="#db6d26"/>
+<text x="774" y="69" class="label">teacher_entropy</text>
+<text x="926" y="69" class="axis">0.35</text>
+<line x1="776" y1="76" x2="776" y2="378" stroke="#d0d5dd"/>
+<line x1="940" y1="76" x2="940" y2="378" stroke="#d0d5dd"/>
+<line x1="854.51" y1="92.00" x2="890.33" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="872.05" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="854.51" y1="120.00" x2="890.33" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="872.05" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="854.51" y1="148.00" x2="890.33" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="872.05" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="854.51" y1="176.00" x2="890.33" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="872.05" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="854.51" y1="204.00" x2="890.33" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="872.05" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="852.80" y1="232.00" x2="895.10" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="880.18" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="876.25" y1="260.00" x2="911.33" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="894.62" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="856.86" y1="288.00" x2="894.37" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="878.28" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="877.59" y1="316.00" x2="916.09" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="898.88" cy="316.00" r="4" fill="#db6d26"/>
+<text x="954" y="69" class="label">student_entropy</text>
+<text x="1106" y="69" class="axis">0.35</text>
+<line x1="956" y1="76" x2="956" y2="378" stroke="#d0d5dd"/>
+<line x1="1120" y1="76" x2="1120" y2="378" stroke="#d0d5dd"/>
+<line x1="1066.03" y1="92.00" x2="1102.81" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.98" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="1062.77" y1="120.00" x2="1101.49" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.14" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="1064.02" y1="148.00" x2="1101.63" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.60" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="1065.24" y1="176.00" x2="1103.22" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1087.70" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="1063.36" y1="204.00" x2="1102.26" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1087.46" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="1066.03" y1="232.00" x2="1102.81" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.98" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="1066.03" y1="260.00" x2="1102.81" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.98" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="1066.03" y1="288.00" x2="1102.81" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.98" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="1066.03" y1="316.00" x2="1102.81" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1088.98" cy="316.00" r="4" fill="#db6d26"/>
+<text x="1134" y="69" class="label">uncertainty</text>
+<text x="1286" y="69" class="axis">0.24</text>
+<line x1="1136" y1="76" x2="1136" y2="378" stroke="#d0d5dd"/>
+<line x1="1300" y1="76" x2="1300" y2="378" stroke="#d0d5dd"/>
+<line x1="1216.52" y1="92.00" x2="1262.72" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1239.28" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="1218.53" y1="120.00" x2="1265.78" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1240.62" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="1216.70" y1="148.00" x2="1262.87" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1238.11" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="1216.69" y1="176.00" x2="1262.93" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1239.08" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="1219.43" y1="204.00" x2="1266.07" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1242.32" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="1214.33" y1="232.00" x2="1246.52" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1231.20" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="1218.76" y1="260.00" x2="1261.60" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1236.05" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="1209.27" y1="288.00" x2="1241.10" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1228.05" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="1209.60" y1="316.00" x2="1237.48" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1225.01" cy="316.00" r="4" fill="#db6d26"/>
+<text x="1314" y="69" class="label">visual_proxy</text>
+<text x="1466" y="69" class="axis">0.91</text>
+<line x1="1316" y1="76" x2="1316" y2="378" stroke="#d0d5dd"/>
+<line x1="1480" y1="76" x2="1480" y2="378" stroke="#d0d5dd"/>
+<line x1="1441.23" y1="92.00" x2="1459.22" y2="92.00" stroke="#0b6bcb" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1450.06" cy="92.00" r="4" fill="#0b6bcb"/>
+<line x1="1440.13" y1="120.00" x2="1458.39" y2="120.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1449.53" cy="120.00" r="4" fill="#db6d26"/>
+<line x1="1441.17" y1="148.00" x2="1459.15" y2="148.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1450.51" cy="148.00" r="4" fill="#db6d26"/>
+<line x1="1441.15" y1="176.00" x2="1459.15" y2="176.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1450.13" cy="176.00" r="4" fill="#db6d26"/>
+<line x1="1440.02" y1="204.00" x2="1458.02" y2="204.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1448.88" cy="204.00" r="4" fill="#db6d26"/>
+<line x1="1447.26" y1="232.00" x2="1460.13" y2="232.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1453.24" cy="232.00" r="4" fill="#db6d26"/>
+<line x1="1441.65" y1="260.00" x2="1458.29" y2="260.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1451.32" cy="260.00" r="4" fill="#db6d26"/>
+<line x1="1449.35" y1="288.00" x2="1462.27" y2="288.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1454.50" cy="288.00" r="4" fill="#db6d26"/>
+<line x1="1450.76" y1="316.00" x2="1462.13" y2="316.00" stroke="#db6d26" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+<circle cx="1455.73" cy="316.00" r="4" fill="#db6d26"/>
+<text x="34" y="96.00" class="label">normal</text>
+<text x="34" y="124.00" class="label">blur_student</text>
+<text x="34" y="152.00" class="label">occluded_student</text>
+<text x="34" y="180.00" class="label">noise_student</text>
+<text x="34" y="208.00" class="label">blank_student</text>
+<text x="34" y="236.00" class="label">wrong_teacher_crop</text>
+<text x="34" y="264.00" class="label">same_template_crop</text>
+<text x="34" y="292.00" class="label">template_only_teacher</text>
+<text x="34" y="320.00" class="label">identity_teacher</text>
+<text x="34" y="405" class="axis">Descriptive only · sample ID is the inferential unit · no visual-correctness claim</text>
+</svg>

@@ -59,15 +59,17 @@ def _quantile(sorted_values: Sequence[float], probability: float) -> float:
 def _distribution(values: Sequence[float]) -> dict[str, Any]:
     if not values:
         return {
-            "sample_count": 0, "mean": None, "variance": None,
+            "sample_count": 0, "mean": None, "variance": None, "std": None,
             "p05": None, "p25": None, "p50": None, "p75": None, "p95": None,
         }
     ordered = sorted(values)
     mean = fmean(values)
+    variance = fmean((value - mean) ** 2 for value in values)
     return {
         "sample_count": len(values),
         "mean": mean,
-        "variance": fmean((value - mean) ** 2 for value in values),
+        "variance": variance,
+        "std": math.sqrt(variance),
         **{
             f"p{int(probability * 100):02d}": _quantile(ordered, probability)
             for probability in (0.05, 0.25, 0.50, 0.75, 0.95)

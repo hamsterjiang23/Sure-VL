@@ -5,6 +5,17 @@ from sure_vl.proxy_metrics import evaluate_proxy_records
 
 
 class ProxyMetricsTests(unittest.TestCase):
+    def test_proxy_std_excludes_fallback(self):
+        rows = [
+            self._record("a", True, 0.4, 0.9, 0.4),
+            self._record("b", False, 0.8, 0.1, 1.0),
+            self._record("c", False, None, None, 0.0, fallback=True, vision_tokens=0),
+        ]
+        report = evaluate_proxy_records(rows)
+        self.assertEqual(report["visual_proxy_stats"]["sample_count"], 2)
+        self.assertAlmostEqual(report["visual_proxy_stats"]["std"], 0.3)
+
+
     @staticmethod
     def _record(
         record_id, correct, visual_confidence, answer_confidence, proxy, *,

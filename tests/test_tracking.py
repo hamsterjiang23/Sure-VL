@@ -146,6 +146,7 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(payload["train/visual_proxy_fallback_count"], 1)
             self.assertEqual(payload["train/visual_proxy_stats/mean"], 0.85)
             self.assertEqual(payload["train/visual_proxy_stats/variance"], 0.0)
+            self.assertEqual(payload["train/visual_proxy_stats/std"], 0.0)
             self.assertEqual(payload["train/proxy_components/raw_js/mean"], 0.12)
             self.assertEqual(payload["train/proxy_components/raw_js/sample_count"], 1)
             self.assertEqual(payload["train/reward_components/total/sample_count"], 2)
