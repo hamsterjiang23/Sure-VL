@@ -13,6 +13,7 @@ from typing import Any, Mapping, Sequence
 
 from .proxy_method import empty_visual_proxy, visual_certainty_proxy
 from .proxy_prompt import (
+    PROXY_OUTPUT_PROTOCOL,
     ParsedProxyCompletion,
     build_proxy_masks,
     parse_proxy_completion,
@@ -192,8 +193,10 @@ def score_proxy_rollout(
     }.items() if value is not None}
     record = {
         "id": example.id,
+        "output_protocol": PROXY_OUTPUT_PROTOCOL,
         "raw_completion": prepared.text,
         "vision_text": prepared.parsed.vision_text,
+        "reason_text": prepared.parsed.reasoning_text,
         "answer": prepared.parsed.answer,
         "answer_correct": correct,
         "answer_label_available": True,

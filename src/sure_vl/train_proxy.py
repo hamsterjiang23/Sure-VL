@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .proxy_data import assert_disjoint_proxy_manifests, build_proxy_dataset, manifest_to_proxy_rows
+from .proxy_prompt import PROXY_OUTPUT_PROTOCOL
 from .proxy_protocol import ProxyProtocolError
 from .tracking import ExperimentTracker, validate_tracking_config
 
@@ -194,6 +195,7 @@ class TrainingPlan:
         setting = self.config["setting"]
         return {
             "method": self.config["method"],
+            "output_protocol": PROXY_OUTPUT_PROTOCOL,
             "config_sha256": _sha256(self.config_path),
             "configuration": self.config,
             "model_id": self.config["model_id"],

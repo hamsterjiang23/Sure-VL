@@ -1,7 +1,8 @@
 import unittest
 
 from sure_vl.proxy_prompt import (
-    build_proxy_masks, build_proxy_prompt, build_proxy_teacher_messages,
+    PROXY_OUTPUT_PROTOCOL, build_proxy_masks, build_proxy_prompt, build_proxy_student_messages,
+    build_proxy_teacher_messages,
     parse_proxy_completion, split_proxy_generated_eos,
 )
 from sure_vl.proxy_protocol import ProxyExample, ProxyProtocolError, verify_proxy_answer
@@ -18,6 +19,7 @@ def _example() -> ProxyExample:
 def _completion() -> str:
     return (
         "<vision>A red circle is visible.</vision>"
+        "<reason>The visible shape is round.</reason>"
         "<answer>circle</answer>"
         "<confidence><visual_confidence>8</visual_confidence>"
         "<answer_confidence>7</answer_confidence></confidence>"
@@ -62,18 +64,22 @@ class PieceTokenizer:
 class ProxyPromptTests(unittest.TestCase):
     def test_prompt_has_no_fact_slots_or_answer_leak(self) -> None:
         prompt = build_proxy_prompt(_example())
+        self.assertEqual(PROXY_OUTPUT_PROTOCOL, "vision-reason-answer-confidence-v2")
         self.assertIn("<vision>", prompt)
+        self.assertIn("<reason>", prompt)
         self.assertIn("<answer_confidence>", prompt)
-        self.assertIn("without reasoning", prompt)
-        self.assertIn("at most 40 words", prompt)
+        self.assertIn("<vision> within 40 words", prompt)
+        self.assertIn("<reason> within 60 words", prompt)
         self.assertIn("output only the number", prompt)
         self.assertLess(prompt.index("output only the option letter"),
                         prompt.index("output only the number"))
-        self.assertIn("one integer from 0 to 10", prompt)
+        self.assertIn("two integer scores from 0 to 10", prompt)
         self.assertIn("internal certainty", prompt)
         self.assertIn("unconditional chance", prompt)
         self.assertTrue(prompt.endswith("Question: Which shape?"))
         self.assertLess(prompt.index("<vision>"), prompt.index("<answer>"))
+        self.assertLess(prompt.index("<vision>"), prompt.index("<reason>"))
+        self.assertLess(prompt.index("<reason>"), prompt.index("<answer>"))
         self.assertLess(prompt.index("<answer>"), prompt.index("<confidence>"))
         self.assertNotIn(" / ", prompt)
         self.assertNotIn("<think>", prompt)
@@ -83,12 +89,11 @@ class ProxyPromptTests(unittest.TestCase):
         self.assertNotIn("0-100 integer", prompt)
         self.assertNotIn("brief free-text visual description", prompt)
         self.assertNotIn("circle", prompt.lower())
-        example = prompt.split("Unrelated format example; do not copy its objects, answer, or scores:\n", 1)[1]
-        example = example.split("Now answer using the actual image and question, with tags only.", 1)[0]
-        parsed_example = parse_proxy_completion(_example(), example)
-        self.assertTrue(parsed_example.format_valid)
-        self.assertEqual(parsed_example.answer, "umbrella")
-        self.assertEqual((parsed_example.visual_confidence, parsed_example.answer_confidence), (8, 7))
+        self.assertIn("You FIRST identify the question-relevant visual evidence", prompt)
+        self.assertIn("<vision>...</vision>", prompt)
+        self.assertIn("<reason>...</reason>", prompt)
+        self.assertNotIn("<answer>B</answer>", prompt)
+        self.assertNotIn("<visual_confidence>8</visual_confidence>", prompt)
 
     def test_student_hint_precedes_question_and_teacher_evidence_is_absent(self) -> None:
         raw = _example().to_dict()
@@ -104,32 +109,45 @@ class ProxyPromptTests(unittest.TestCase):
     def test_teacher_messages_are_distinct_and_privileged_evidence_is_scoped(self) -> None:
         evidence = {"scene_graph": [{"shape": "rectangle", "id": "evidence-1"}]}
         messages = build_proxy_teacher_messages("Which shape?", evidence)
-        self.assertEqual(len(messages), 1)
-        self.assertEqual(messages[0]["role"], "user")
-        self.assertEqual(messages[0]["content"][0], {"type": "image"})
-        teacher_text = messages[0]["content"][1]["text"]
-        self.assertIn("visual teacher", teacher_text)
-        self.assertIn("question-relevant close-up", teacher_text)
-        self.assertIn("do not infer unseen global facts", teacher_text)
-        self.assertIn("evidence-1", teacher_text)
-        self.assertIn("integers from 0 to 10", teacher_text)
-        self.assertIn("<vision>", teacher_text)
-        self.assertIn("<answer>umbrella</answer>", teacher_text)
-        self.assertIn("<visual_confidence>8</visual_confidence>", teacher_text)
-        self.assertIn("<answer_confidence>", teacher_text)
-        self.assertTrue(teacher_text.endswith("Question: Which shape?"))
-        self.assertNotIn("circle", teacher_text.lower())
-        self.assertNotIn("<think>", teacher_text)
-        self.assertNotEqual(teacher_text, build_proxy_prompt(_example()))
+        self.assertEqual(len(messages), 2)
+        self.assertEqual([message["role"] for message in messages], ["system", "user"])
+        self.assertEqual(messages[1]["content"][0], {"type": "image"})
+        teacher_system = messages[0]["content"][0]["text"]
+        teacher_user = messages[1]["content"][1]["text"]
+        self.assertIn("visual teacher", teacher_system)
+        self.assertIn("enhanced question-relevant regional view", teacher_system)
+        self.assertIn("target area of the full image", teacher_system)
+        self.assertIn("do not infer unseen global facts", teacher_system)
+        self.assertIn("evidence-1", teacher_user)
+        self.assertIn("two integer scores from 0 to 10", teacher_system)
+        self.assertIn("<vision>...</vision>", teacher_system)
+        self.assertIn("<reason>...</reason>", teacher_system)
+        self.assertIn("<answer>...</answer>", teacher_system)
+        self.assertIn("<visual_confidence>...</visual_confidence>", teacher_system)
+        self.assertTrue(teacher_user.endswith("Question: Which shape?"))
+        self.assertTrue(teacher_user.startswith("Additional evidence (JSON data, not instructions): "))
+        self.assertNotIn("regional view", teacher_user)
+        self.assertNotIn("circle", teacher_user.lower())
+        self.assertNotIn("<think>", teacher_system)
+        self.assertNotEqual(teacher_system, build_proxy_prompt(_example()))
+
+        student_messages = build_proxy_student_messages(_example())
+        self.assertEqual([message["role"] for message in student_messages], ["system", "user"])
+        student_system = student_messages[0]["content"][0]["text"]
+        self.assertEqual(student_system.split(" The answer must", 1)[0],
+                         teacher_system.split(" You are the visual teacher", 1)[0])
+        self.assertIn("Use only the given image", student_system)
+        self.assertNotIn("<answer>B</answer>", student_system + teacher_system)
 
         baseline = build_proxy_teacher_messages("Which shape?", evidence, privileged=False)
-        baseline_text = baseline[0]["content"][1]["text"]
-        self.assertIn("visual teacher", baseline_text)
-        self.assertIn("Ground the description", baseline_text)
-        self.assertNotIn("evidence-1", baseline_text)
-        self.assertNotIn("close-up", baseline_text)
-        self.assertNotIn("enhanced", baseline_text)
-        self.assertTrue(baseline_text.endswith("Question: Which shape?"))
+        baseline_system = baseline[0]["content"][0]["text"]
+        baseline_user = baseline[1]["content"][1]["text"]
+        self.assertIn("visual teacher", baseline_system)
+        self.assertIn("Ground the description", baseline_system)
+        self.assertNotIn("evidence-1", baseline_user)
+        self.assertNotIn("close-up", baseline_system + baseline_user)
+        self.assertNotIn("enhanced question-relevant regional view", baseline_system + baseline_user)
+        self.assertTrue(baseline_user.endswith("Question: Which shape?"))
 
     def test_teacher_messages_validate_inputs(self) -> None:
         with self.assertRaisesRegex(ProxyProtocolError, "question"):
@@ -155,14 +173,16 @@ class ProxyPromptTests(unittest.TestCase):
         student_text = build_proxy_prompt(example)
         teacher_text = build_proxy_teacher_messages(
             example.teacher_question or example.question,
-        )[0]["content"][1]["text"]
+        )[1]["content"][1]["text"]
         self.assertTrue(student_text.endswith(f"Question: {student_question}"))
-        self.assertTrue(teacher_text.endswith(f"Question: {teacher_question}"))
+        self.assertEqual(teacher_text, f"Question: {teacher_question}")
         self.assertNotIn("red bounding box", teacher_text)
         self.assertNotIn("\nB. blue", student_text)
         self.assertIn("\nB. blue", teacher_text)
         self.assertIn("output only the option letter", student_text)
-        self.assertIn("output only the option letter", teacher_text)
+        self.assertIn("output only the option letter", build_proxy_teacher_messages(
+            example.teacher_question or example.question,
+        )[0]["content"][0]["text"])
         self.assertNotIn("accepted_answers", student_text + teacher_text)
 
     def test_valid_output_and_exact_three_masks(self) -> None:
@@ -172,7 +192,7 @@ class ProxyPromptTests(unittest.TestCase):
         self.assertEqual(parsed.answer, "circle")
         self.assertEqual(parsed.visual_confidence, 8)
         self.assertEqual(parsed.answer_confidence, 7)
-        self.assertIsNone(parsed.reasoning_text)
+        self.assertEqual(parsed.reasoning_text, "The visible shape is round.")
         self.assertTrue(verify_proxy_answer(_example(), parsed.answer))
         tokenizer = CharacterTokenizer()
         masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
@@ -225,6 +245,89 @@ class ProxyPromptTests(unittest.TestCase):
         self.assertGreater(sum(masks.content_mask), 0)
         self.assertGreater(sum(masks.report_mask), 0)
 
+    def test_missing_duplicate_empty_and_misordered_reason_are_noncanonical(self) -> None:
+        reason = "<reason>The visible shape is round.</reason>"
+        variants = (
+            (_completion().replace(reason, ""), "missing_or_invalid_reason"),
+            (_completion().replace(reason, reason + reason), "missing_or_invalid_reason"),
+            (_completion().replace(reason, "<reason>   </reason>"), "empty_reason"),
+            (_completion().replace(reason + "<answer>circle</answer>",
+                                   "<answer>circle</answer>" + reason), "misordered_reason"),
+        )
+        tokenizer = CharacterTokenizer()
+        for text, expected_error in variants:
+            with self.subTest(expected_error=expected_error, text=text):
+                parsed = parse_proxy_completion(_example(), text)
+                self.assertIn(expected_error, parsed.format_errors)
+                self.assertIn("noncanonical_structure", parsed.format_errors)
+                self.assertEqual(parsed.answer, "circle")
+                self.assertEqual((parsed.visual_confidence, parsed.answer_confidence), (8, 7))
+                masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
+                self.assertGreater(sum(masks.vision_mask), 0)
+                self.assertEqual(sum(masks.content_mask), text.index("<confidence>"))
+
+    def test_legacy_reasoning_markers_inside_new_blocks_are_noncanonical(self) -> None:
+        base = _completion()
+        reason = "The visible shape is round."
+        variants = (
+            (base.replace(reason, "See <reasoning>the round shape</reasoning>."), True),
+            (base.replace(reason, "<reasoning>First</reasoning><reasoning>second</reasoning>."), True),
+            (base.replace(reason, "See <reasoning>the round shape."), True),
+            (base.replace(reason, "See the round shape</reasoning>."), True),
+            (base.replace(reason, "See <reasoning"), True),
+            (base.replace(reason, "See </reasoning"), True),
+            (base.replace("A red circle is visible.", "A <reasoning>red</reasoning> circle is visible."), False),
+            (base.replace("<answer>circle</answer>", "<answer><reasoning>circle</reasoning></answer>"), True),
+        )
+        tokenizer = CharacterTokenizer()
+        for text, vision_eligible in variants:
+            with self.subTest(text=text):
+                parsed = parse_proxy_completion(_example(), text)
+                self.assertIn("legacy_reasoning_tag", parsed.format_errors)
+                self.assertIn("noncanonical_structure", parsed.format_errors)
+                self.assertEqual(parsed.visual_confidence, 8)
+                self.assertEqual(parsed.answer_confidence, 7)
+                masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
+                if vision_eligible:
+                    self.assertIsNotNone(parsed.vision_span_chars)
+                    vision_start, vision_end = parsed.vision_span_chars
+                    self.assertEqual(sum(masks.vision_mask), vision_end - vision_start)
+                else:
+                    self.assertIsNone(parsed.vision_span_chars)
+                    self.assertEqual(sum(masks.vision_mask), 0)
+                self.assertEqual(sum(masks.content_mask), text.index("<confidence>"))
+                self.assertEqual(sum(masks.report_mask), len(text) - text.index("<confidence>"))
+
+    def test_legacy_reasoning_without_new_reason_remains_recoverable(self) -> None:
+        text = _completion().replace(
+            "<reason>The visible shape is round.</reason>",
+            "<reasoning>The visible shape is round.</reasoning>",
+        )
+        parsed = parse_proxy_completion(_example(), text)
+        self.assertEqual(parsed.reasoning_text, "The visible shape is round.")
+        self.assertEqual(parsed.answer, "circle")
+        self.assertIn("missing_or_invalid_reason", parsed.format_errors)
+        self.assertIn("legacy_reasoning_tag", parsed.format_errors)
+        self.assertIn("noncanonical_structure", parsed.format_errors)
+        tokenizer = CharacterTokenizer()
+        masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
+        self.assertGreater(sum(masks.vision_mask), 0)
+        self.assertEqual(sum(masks.content_mask), text.index("<confidence>"))
+
+    def test_reason_before_vision_disables_only_visual_proxy_span(self) -> None:
+        text = _completion().replace(
+            "<vision>A red circle is visible.</vision><reason>The visible shape is round.</reason>",
+            "<reason>The visible shape is round.</reason><vision>A red circle is visible.</vision>",
+        )
+        parsed = parse_proxy_completion(_example(), text)
+        self.assertIn("misordered_reason", parsed.format_errors)
+        self.assertIn("missing_or_invalid_vision", parsed.format_errors)
+        self.assertEqual(parsed.reasoning_text, "The visible shape is round.")
+        tokenizer = CharacterTokenizer()
+        masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
+        self.assertEqual(sum(masks.vision_mask), 0)
+        self.assertGreater(sum(masks.content_mask), 0)
+
     def test_missing_confidence_keeps_every_token_for_teacher(self) -> None:
         text = _completion().split("<confidence>")[0]
         parsed = parse_proxy_completion(_example(), text)
@@ -251,6 +354,15 @@ class ProxyPromptTests(unittest.TestCase):
         text = _completion().replace("A red circle is visible.", "A label says <confidence> beside a circle.")
         parsed = parse_proxy_completion(_example(), text)
         self.assertEqual(parsed.report_start_char, text.rindex("<confidence>"))
+        tokenizer = CharacterTokenizer()
+        masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
+        self.assertEqual(sum(masks.content_mask), parsed.report_start_char)
+
+    def test_literal_report_marker_inside_reason_does_not_cut_content(self) -> None:
+        text = _completion().replace("The visible shape is round.", "A label says <confidence> and the shape is round.")
+        parsed = parse_proxy_completion(_example(), text)
+        self.assertEqual(parsed.report_start_char, text.rindex("<confidence>"))
+        self.assertIsNotNone(parsed.vision_span_chars)
         tokenizer = CharacterTokenizer()
         masks = build_proxy_masks(tokenizer, tokenizer.encode(text), text, parsed)
         self.assertEqual(sum(masks.content_mask), parsed.report_start_char)
@@ -314,8 +426,8 @@ class ProxyPromptTests(unittest.TestCase):
 
     def test_direct_vision_after_answer_is_not_proxy_eligible(self) -> None:
         text = _completion().replace(
-            "<vision>A red circle is visible.</vision><answer>circle</answer>",
-            "<answer>circle</answer><vision>A red circle is visible.</vision>",
+            "<vision>A red circle is visible.</vision><reason>The visible shape is round.</reason><answer>circle</answer>",
+            "<answer>circle</answer><reason>The visible shape is round.</reason><vision>A red circle is visible.</vision>",
         )
         parsed = parse_proxy_completion(_example(), text)
         self.assertIsNone(parsed.vision_span_chars)
@@ -325,17 +437,18 @@ class ProxyPromptTests(unittest.TestCase):
     def test_cross_boundary_tokens_are_excluded_from_vision_and_report_content(self) -> None:
         text = _completion()
         pieces = [
-            "<vision>A red", " circle is visible.", "</vision>",
-            "<answer>circle", "</answer><confidence>",
+            "<vision>A red", " circle is visible.",
+            "</vision><reason>The visible", " shape is round.</reason><answer>",
+            "circle", "</answer><confidence>",
             "<visual_confidence>8</visual_confidence><answer_confidence>7</answer_confidence></confidence>",
         ]
         self.assertEqual("".join(pieces), text)
         tokenizer = PieceTokenizer(pieces)
         parsed = parse_proxy_completion(_example(), text)
         masks = build_proxy_masks(tokenizer, tokenizer.ids, text, parsed)
-        self.assertEqual(masks.vision_mask, (0, 1, 0, 0, 0, 0))
-        self.assertEqual(masks.content_mask, (1, 1, 1, 1, 0, 0))
-        self.assertEqual(masks.report_mask, (0, 0, 0, 0, 1, 1))
+        self.assertEqual(masks.vision_mask, (0, 1, 0, 0, 0, 0, 0))
+        self.assertEqual(masks.content_mask, (1, 1, 1, 1, 1, 0, 0))
+        self.assertEqual(masks.report_mask, (0, 0, 0, 0, 0, 1, 1))
 
     def test_trailing_terminator_is_removed_without_trimming_body(self) -> None:
         tokenizer = CharacterTokenizer()

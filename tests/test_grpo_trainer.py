@@ -15,7 +15,9 @@ try:
     import torch
     from trl import GRPOTrainer
     from sure_vl.proxy_protocol import ProxyExample
-    from sure_vl.proxy_rollout import PreparedProxyRollout, ScoredProxyRollout
+    from sure_vl.proxy_rollout import (
+        PreparedProxyRollout, ScoredProxyRollout, prepare_proxy_rollout,
+    )
     from sure_vl.training.trl.trainer import (
         ProxyGRPOTrainer, _SampleScore, _global_group_center, _group_center,
     )
@@ -72,6 +74,13 @@ def _fake_scored(ids=(10, 11), content_reward=-3.0, report_reward=-3.0):
         record={"id": "tiny", "proxy_fallback": True},
         content_reward=content_reward, report_reward=report_reward,
     )
+
+
+def _canonical_completion(vision="A", reason="R", answer="B"):
+    return (f"<vision>{vision}</vision><reason>{reason}</reason>"
+            f"<answer>{answer}</answer><confidence>"
+            "<visual_confidence>8</visual_confidence>"
+            "<answer_confidence>9</answer_confidence></confidence>")
 
 
 @unittest.skipIf(torch is None, "Torch and TRL are unavailable")
@@ -161,10 +170,19 @@ class ProxyGRPOTests(unittest.TestCase):
         }
         trainer._record_training_attempt = lambda _inputs, **_kwargs: None
         logits_seen = []
+        completion = _canonical_completion()
+        ids = tuple(ord(character) for character in completion) + (0,)
+        prepared = prepare_proxy_rollout(
+            ProxyExample.from_dict(json.loads(_payload())), CharacterTokenizer(), ids,
+        )
+        reason_position = completion.index("<reason>") + len("<reason>")
+        self.assertTrue(prepared.parsed.format_valid)
+        self.assertTrue(prepared.content_mask[reason_position])
+        self.assertFalse(prepared.vision_mask[reason_position])
 
         def upstream(_self, model, inputs, return_outputs=False, num_items_in_batch=None):
-            output = model(input_ids=torch.tensor([[1, 2, 3, 4]], dtype=torch.long),
-                           logits_to_keep=3)
+            output = model(input_ids=torch.tensor([[1, 2, *ids]], dtype=torch.long),
+                           logits_to_keep=len(ids) + 1)
             output.logits.retain_grad()
             logits_seen.append(output.logits)
             return output.logits.sum() * 0.0  # isolate the added KL gradient
@@ -172,10 +190,10 @@ class ProxyGRPOTests(unittest.TestCase):
         inputs = {
             "_proxy_example_payloads": [_payload()],
             "_proxy_teacher_version": torch.tensor([0]),
-            "_proxy_content_mask": torch.tensor([[True, False]]),
-            "completion_ids": torch.tensor([[3, 4]]),
-            "completion_mask": torch.tensor([[True, True]]),
-            "advantages": torch.tensor([[1.0, 0.0]]),
+            "_proxy_content_mask": torch.tensor([prepared.content_mask]),
+            "completion_ids": torch.tensor([ids]),
+            "completion_mask": torch.tensor([[True] * len(ids)]),
+            "advantages": torch.tensor([prepared.content_mask], dtype=torch.float32),
         }
         with patch.object(GRPOTrainer, "compute_loss", upstream):
             loss = ProxyGRPOTrainer.compute_loss(trainer, student, inputs)
@@ -183,7 +201,8 @@ class ProxyGRPOTests(unittest.TestCase):
         loss.backward()
         self.assertEqual(len(logits_seen), 1)
         self.assertGreater(float(logits_seen[0].grad[0, 0].abs().sum()), 0.0)
-        self.assertEqual(float(logits_seen[0].grad[0, 1:].abs().sum()), 0.0)
+        self.assertGreater(float(logits_seen[0].grad[0, reason_position].abs().sum()), 0.0)
+        self.assertEqual(float(logits_seen[0].grad[0, prepared.content_count:].abs().sum()), 0.0)
         self.assertTrue(any(parameter.grad is not None for parameter in student.parameters()))
         self.assertTrue(all(parameter.grad is None for parameter in teacher.parameters()))
 
@@ -195,10 +214,19 @@ class ProxyGRPOTests(unittest.TestCase):
         trainer.model = student
         trainer.teacher_model = teacher
         trainer.accelerator = SimpleNamespace(device=torch.device("cpu"), unwrap_model=lambda model: model)
-        trainer.processing_class = SimpleNamespace(apply_chat_template=lambda **kwargs: {
-            "input_ids": torch.tensor([[1, 3 if kwargs["conversation"][0][0]["role"] == "teacher" else 2]]),
-            "attention_mask": torch.ones((1, 2), dtype=torch.long),
-        })
+        encoded_views = []
+
+        def encode_template(**kwargs):
+            messages = kwargs["conversation"][0]
+            self.assertEqual([message["role"] for message in messages], ["system", "user"])
+            view = messages[0]["content"]
+            encoded_views.append(view)
+            return {
+                "input_ids": torch.tensor([[1, 3 if view == "Teacher guidance" else 2]]),
+                "attention_mask": torch.ones((1, 2), dtype=torch.long),
+            }
+
+        trainer.processing_class = SimpleNamespace(apply_chat_template=encode_template)
         trainer.tools = []
         trainer.chat_template = None
         trainer.chat_template_kwargs = {}
@@ -212,20 +240,32 @@ class ProxyGRPOTests(unittest.TestCase):
                                 "min_vision_tokens": 1, "chunk_size": 8}
         trainer.reward_config = {"answer_utility": 1.0, "rho_answer": 1.0,
                                  "rho_visual": 1.0, "format_penalty": 1.0}
-        trainer._teacher_messages = lambda _example: [{"role": "teacher", "content": "clear"}]
+        trainer._teacher_messages = lambda _example: [
+            {"role": "system", "content": "Teacher guidance"},
+            {"role": "user", "content": "teacher image and question"},
+        ]
         example = ProxyExample(
             id="tiny", split="train", student_image="student.png", teacher_image="teacher.png",
             question="Pick B", accepted_answers=("B",),
         )
-        text = ("<vision>blue</vision><answer>B</answer><confidence>"
-                "<visual_confidence>8</visual_confidence>"
-                "<answer_confidence>9</answer_confidence></confidence>")
+        text = _canonical_completion(vision="blue", reason="The visible object is blue.")
         ids = tuple(ord(character) for character in text) + (0,)
         scored, student_prompt_ids = trainer._score_one(
-            example, [{"role": "user", "content": "student"}], ids,
+            example, [
+                {"role": "system", "content": "Student guidance"},
+                {"role": "user", "content": "student image and question"},
+            ], ids,
         )
         self.assertEqual(student_prompt_ids, (1, 2))
+        self.assertEqual(encoded_views, ["Student guidance", "Teacher guidance"])
         self.assertEqual(scored.prepared.completion_ids, ids)
+        self.assertTrue(scored.prepared.parsed.format_valid)
+        self.assertEqual(scored.prepared.parsed.reasoning_text, "The visible object is blue.")
+        reason_position = text.index("The visible object is blue.")
+        self.assertTrue(scored.prepared.content_mask[reason_position])
+        self.assertFalse(scored.prepared.vision_mask[reason_position])
+        self.assertEqual(scored.record["content_tokens"], text.index("<confidence>"))
+        self.assertEqual(scored.record["opsd"]["content_tokens"], float(text.index("<confidence>")))
         self.assertFalse(scored.record["proxy_fallback"])
         self.assertGreater(scored.record["vision_tokens"], 0)
         self.assertTrue(scored.record["answer_correct"])

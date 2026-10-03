@@ -1,5 +1,7 @@
 # Visual proxy diagnostic experiment — completed 2026-10-03
 
+> 历史协议范围：本报告和冻结 tokenpack 使用未包含 `<reason>` 的旧输出模板。数值保留原样，不能作为当前 `vision-reason-answer-confidence-v2` 的诊断结果。重现本实验需要 checkout `5b39f18`（包含原提示词与脚本）；新脚本会拒绝旧协议 tokenpack，防止混用不同输入模板。
+
 ## 实测结论
 
 已移除新增的仿射放大映射，保留原始代理公式。完成一次真实图像、真实 Qwen3.5-0.8B 前向的零更新诊断：100-step Student + `teacher_final` EMA Teacher，32 个冻结验证样本，9 个条件，共 288 个样本条件记录、6,399 个视觉 token 记录（每条件 711 个），评分前向 Student 160 次、Teacher 288 次。没有训练、反向传播或 EMA 更新，参数梯度数量为零。
@@ -60,6 +62,8 @@
 - GPU1 两次完整模型迁移超时；小张量及 1/16/64 MiB 传输检查通过。最终两个分片均在 GPU0 完成。最大 allocated 显存约 6.66 GiB，实验结束两卡均空闲。环境由现有 `uv` 项目管理，没有修改服务器依赖。
 
 ### 复现
+
+以下命令使用 `5b39f18` 中的源码和旧提示词；请在该 commit 的独立 checkout 中运行。
 
 ```bash
 RUN=/data/LHJ/Sure-VL/outputs/visual-proxy-diagnostic-v1-20261003

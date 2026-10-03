@@ -41,7 +41,7 @@ def _example():
 
 def _ids(text=None):
     if text is None:
-        text = ("<vision>A</vision><answer>yes</answer><confidence>"
+        text = ("<vision>A</vision><reason>R</reason><answer>yes</answer><confidence>"
                 "<visual_confidence>8</visual_confidence>"
                 "<answer_confidence>9</answer_confidence></confidence>")
     return [ord(character) for character in text] + [0]
@@ -62,11 +62,18 @@ class VerlObjectiveTests(unittest.TestCase):
         ids = _ids()
         prepared = prepare_proxy_rollout(_example(), CharacterTokenizer(), ids, eos_token_ids=[0])
         vision_position = prepared.vision_positions[0]
+        reason_position = prepared.text.index("<reason>") + len("<reason>")
+        self.assertTrue(prepared.parsed.format_valid)
+        self.assertEqual(prepared.parsed.reasoning_text, "R")
+        self.assertTrue(prepared.content_mask[reason_position])
+        self.assertFalse(prepared.vision_mask[reason_position])
+        self.assertEqual(prepared.vision_positions, (prepared.text.index("<vision>") + len("<vision>"),))
         self.assertEqual(prepared.content_count, "".join(map(chr, ids[:-1])).index("<confidence>"))
         self.assertTrue(prepared.report_mask[-1])  # generated EOS is a report action
         student = torch.zeros(len(ids), 128, requires_grad=True)
         clear = torch.zeros(prepared.content_count, 128, requires_grad=True)
         clear.data[vision_position, ord("A")] = 3.0
+        clear.data[reason_position, ord("R")] = 3.0
         last = vision_position + 1
         restricted = student.detach()[:last].clone()
         proxy, reward = _configs()
@@ -80,6 +87,13 @@ class VerlObjectiveTests(unittest.TestCase):
         self.assertAlmostEqual(scored.record["reward"]["answer_score"], -0.01)
         self.assertTrue(math.isfinite(scored.record["visual_proxy"]))
         self.assertFalse(scored.record["proxy_fallback"])
+        clear_without_reason = clear.detach().clone()
+        clear_without_reason[reason_position].zero_()
+        scored_without_reason = score_proxy_rollout(
+            _example(), prepared, student.detach(), clear_without_reason, restricted,
+            proxy_config=proxy, reward_config=reward,
+        )
+        self.assertEqual(scored.record["visual_proxy"], scored_without_reason.record["visual_proxy"])
 
         # Isolate teacher KL: its full-vocabulary gradient must reach content
         # but neither report tokens nor the frozen teacher logits.
@@ -91,6 +105,7 @@ class VerlObjectiveTests(unittest.TestCase):
         )
         opsd.backward()
         self.assertGreater(float(student.grad[:prepared.content_count].abs().sum()), 0.0)
+        self.assertGreater(float(student.grad[reason_position].abs().sum()), 0.0)
         self.assertEqual(float(student.grad[prepared.content_count:].abs().sum()), 0.0)
         self.assertIsNone(clear.grad)
 
@@ -131,7 +146,7 @@ class VerlObjectiveTests(unittest.TestCase):
         )
         proxy, reward = _configs(lambda_b=0.0)
         missing = _ids(
-            "<vision>A harness is visible</vision><confidence>"
+            "<vision>A harness is visible</vision><reason>The shape matches a harness.</reason><confidence>"
             "<visual_confidence>8</visual_confidence>"
             "<answer_confidence>9</answer_confidence></confidence>"
         )
@@ -148,7 +163,8 @@ class VerlObjectiveTests(unittest.TestCase):
         self.assertAlmostEqual(scored.record["reward"]["answer_score"], -0.81)
 
         expanded = _ids(
-            "<vision>A harness is visible</vision><answer>B. harness</answer><confidence>"
+            "<vision>A harness is visible</vision><reason>The shape matches a harness.</reason>"
+            "<answer>B. harness</answer><confidence>"
             "<visual_confidence>8</visual_confidence>"
             "<answer_confidence>9</answer_confidence></confidence>"
         )

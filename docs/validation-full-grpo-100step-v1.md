@@ -1,5 +1,7 @@
 # Full official-data TRL run: 100 successful updates
 
+> Historical protocol: this run generated `<vision>`, `<answer>`, and `<confidence>` without `<reason>`. Its format coverage and results apply to that earlier protocol. It has not trained or validated the current `vision-reason-answer-confidence-v2` prompt.
+
 The [W&B run](https://wandb.ai/jiangcangshu0-nanjing-university/Sure-VL/runs/ep7oqk7d) finished on the frozen official Vision-OPD split: 5,985 training examples and 256 held-out examples. Source: `b1dbc0177cf50546b6afd0bde08020c7c386c338`. Training used Qwen3.5-0.8B, one V100, FP32, native TRL GRPO, four actual completions per question and 100 successful updates. This budget does not traverse every training example.
 
 ## Execution and monitoring

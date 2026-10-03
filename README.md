@@ -15,15 +15,18 @@ Teacher-grounded internal visual confidence and answer confidence for vision-lan
 
 ## Model output and Teacher input
 
-The Student receives the official full image with a red region marker and the question. Thinking is disabled. The adapted VL-Calibration prompt requests a brief description, an answer, and two **0–10 integer** reports:
+The Student receives the official full image with a red region marker and the question. Built-in thinking is disabled. The adapted VL-Calibration System Prompt requests a brief visual description, brief task deduction, an answer, and two **0–10 integer** reports:
 
 ```text
 <vision>brief question-relevant visual description</vision>
+<reason>brief deduction based on that visual evidence</reason>
 <answer>A</answer>
 <confidence><visual_confidence>8</visual_confidence><answer_confidence>7</answer_confidence></confidence>
 ```
 
-The Teacher receives the **official enhanced crop**, a **different Teacher prompt**, the clean question, and optional additional evidence such as a scene graph. The official Vision-OPD-6K data has no scene graph; the manifest supports `teacher_evidence` when supplied by another dataset. Answers used for grading never enter either prompt.
+Both roles use System + User messages and require these four blocks in order (`vision-reason-answer-confidence-v2`). The explicit `<reason>` is part of the answer protocol; the Qwen chat template still closes its built-in thinking prefix. Legacy responses missing `<reason>` remain readable but receive a format error.
+
+The Teacher receives the **official enhanced crop**, a **different Teacher System Prompt**, the clean question, and optional additional evidence such as a scene graph. This adapts Vision-OPD's `bbox_images` replacement and optional `teacher_prompt` mechanism. The official Vision-OPD-6K data has no scene graph; the manifest supports `teacher_evidence` when supplied by another dataset. Answers used for grading never enter either prompt. See the [exact prompt protocol and source mapping](docs/prompt-protocol-v2.md).
 
 The Teacher scores the exact Student-generated content token IDs. On visual-description tokens, Student/Teacher JS divergence, same-input Teacher baseline, and Teacher entropy form the detached internal target `S`. The baseline uses the exact Student prompt IDs and image. This target reflects image, evidence, template conditioning and model differences; it is a confidence proxy, not a factual visual-accuracy label. Visual spans with fewer than eight tokens fall back to `S=0` with explicit coverage counts.
 
@@ -41,7 +44,7 @@ The TRL Trainer owns sampling, accumulation, optimizer, scheduler, clipping, che
 
 Each question produces four actual sampled responses. Content and report rewards are **separately centered within that group**, without dividing by reward standard deviation. Native GRPO uses sequence mean of token mean losses. A constant reward group therefore has zero policy advantage. This is an explicit training variant of the derivation's raw score-function sum.
 
-OPSD follows the original repository's full-vocabulary forward KL, temperature 1.1 and pointwise vocabulary cap 0.05, averaged over content tokens. It uses the **same differentiable Student forward** as GRPO. Confidence tokens receive no distillation. Teacher parameters are frozen during a group and updated by FP32 EMA only after a successful optimizer step.
+OPSD follows the original repository's full-vocabulary forward KL, temperature 1.1 and pointwise vocabulary cap 0.05, averaged over content tokens (`vision`, `reason`, and `answer`, including their delimiters). It uses the **same differentiable Student forward** as GRPO. The visual proxy uses only the `vision` body. Confidence tokens receive no distillation. Teacher parameters are frozen during a group and updated by FP32 EMA only after a successful optimizer step.
 
 The V100 recipe uses the cached Qwen3.5-0.8B model, FP32, one GPU, microbatch 1, accumulation 4, learning rate `1e-6`, at most 256 generated tokens and 65,536 image pixels.
 
@@ -57,9 +60,9 @@ The earlier prefix recipe remains available as `qwen35_08b_visionopd_prefix640_1
 cd /data/LHJ/Sure-VL
 uv sync --extra train --extra tracking --frozen
 uv run --extra train --extra tracking sure-vl-train-trl \
-  --config configs/trl/qwen35_08b_visionopd_100step.json --check-only
+  --config configs/trl/qwen35_08b_visionopd_protocol_v2_100step.json --check-only
 CUDA_VISIBLE_DEVICES=0 uv run --no-sync --frozen --extra train --extra tracking sure-vl-train-trl \
-  --config configs/trl/qwen35_08b_visionopd_100step.json
+  --config configs/trl/qwen35_08b_visionopd_protocol_v2_100step.json
 ```
 
 The recipe requests **100 successful optimizer updates** and online W&B. Validation uses the same frozen 32 held-out IDs at step 0, every 20 updates, and step 100. `training_completed.json` is written only after Trainer, Adam state, successful updates, EMA and validation gates agree. A command, process start, rollout or source test is not completion evidence.
@@ -72,4 +75,4 @@ The earlier official-data GOLD run was **stopped at 80 attempts** after confirmi
 
 Historical [100-update pilot evidence](docs/validation-proxy-100step-v1.md) demonstrated optimizer execution but failed output quality. Neither those runs nor source tests establish calibration improvement.
 
-The corrected [full official-data TRL run](docs/validation-full-grpo-100step-v1.md) completed **100 successful updates**, with Adam and Teacher EMA both at 100, zero skips, 400 actual rollouts and all six fixed assessments. Its W&B state is finished. Output coverage reached 32/32 on the fixed assessment; the report preserves paired calibration denominators and the limits of this small-model result.
+The historical [full official-data TRL run](docs/validation-full-grpo-100step-v1.md) completed **100 successful updates**, with Adam and Teacher EMA both at 100, zero skips, 400 actual rollouts and all six fixed assessments. Its W&B state is finished. It used the earlier output protocol without `<reason>`; its 32/32 format coverage does not validate the current four-block protocol. The report preserves paired calibration denominators and the limits of this small-model result.

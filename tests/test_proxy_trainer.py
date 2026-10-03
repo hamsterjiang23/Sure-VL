@@ -41,6 +41,7 @@ def _payload():
 def _completion():
     return (
         "<vision>A</vision>"
+        "<reason>The visible detail supports the answer.</reason>"
         "<answer>yes</answer><confidence>"
         "<visual_confidence>8</visual_confidence>"
         "<answer_confidence>9</answer_confidence></confidence>"
@@ -105,6 +106,7 @@ class ProxyTrainerTensorTests(unittest.TestCase):
         report_start = completion.index("<confidence>")
         vision_start = completion.index("<vision>") + len("<vision>")
         self.assertEqual(measured.record["vision_tokens"], 1)
+        self.assertEqual(measured.record["format_errors"], [])
         self.assertEqual(measured.content_mask.tolist()[:report_start], [True] * report_start)
         self.assertEqual(measured.content_mask.tolist()[report_start:], [False] * (len(ids) - report_start))
         self.assertEqual(measured.report_mask.tolist()[report_start:], [True] * (len(ids) - report_start))
@@ -123,6 +125,9 @@ class ProxyTrainerTensorTests(unittest.TestCase):
         self.assertIsInstance(measured.record["visual_proxy"], float)
         measured.opsd_loss_sum.backward()
         self.assertGreater(logits.grad[:report_start].abs().sum().item(), 0)
+        reason_start = completion.index("<reason>")
+        reason_end = completion.index("</reason>") + len("</reason>")
+        self.assertGreater(logits.grad[reason_start:reason_end].abs().sum().item(), 0)
         self.assertEqual(logits.grad[report_start:].abs().sum().item(), 0)
         self.assertEqual(vision_start, completion.index("A</vision>"))
 
@@ -186,6 +191,24 @@ class ProxyTrainerTensorTests(unittest.TestCase):
         self.assertAlmostEqual(measured.record["reward"]["format_penalty"], 1.0)
         self.assertAlmostEqual(measured.report_reward, -3.0)
         self.assertAlmostEqual(measured.content_reward, -2.0)
+
+    def test_historical_missing_reason_recovers_answer_and_keeps_content_teacher(self):
+        completion = _completion().replace(
+            "<reason>The visible detail supports the answer.</reason>", ""
+        )
+        ids = self._ids(completion)
+        stub = self._stub()
+        measured = stub.measure_rollout(
+            self._row(), ids, torch.zeros((len(ids), 128), requires_grad=True)
+        )
+        self.assertEqual(measured.record["answer_correct"], True)
+        self.assertTrue(measured.record["format_errors"])
+        self.assertEqual(measured.record["vision_tokens"], 1)
+        self.assertEqual(
+            stub.teacher_calls[0][1].tolist(),
+            [ord(char) for char in completion.split("<confidence>")[0]],
+        )
+        self.assertGreater(measured.content_token_count, 0)
 
     def test_short_vision_fallback_and_missing_answer_label_are_explicit(self):
         completion = _completion().replace("<answer>yes</answer>", "<answer></answer>")

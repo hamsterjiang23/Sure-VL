@@ -83,7 +83,8 @@ if torch is not None:
             self.last_generate_parameters = dict(parameters)
             answer = "B" if parameters["seed"] % 2 == 0 else "C"
             detail = "A clear detail appears here" if answer == "B" else "A detail"
-            text = (f"<vision>{detail}</vision><answer>{answer}</answer><confidence>"
+            text = (f"<vision>{detail}</vision><reason>The detail supports {answer}.</reason>"
+                    f"<answer>{answer}</answer><confidence>"
                     "<visual_confidence>8</visual_confidence>"
                     "<answer_confidence>9</answer_confidence></confidence>")
             return torch.tensor([ord(character) for character in text] + [0], dtype=torch.long)
@@ -179,6 +180,14 @@ class WorkerLifecycleTests(unittest.TestCase):
         self.assertEqual(record["teacher_conditioning"]["baseline_prompt_sha256"], "student-view")
         self.assertEqual(record["teacher_conditioning"]["teacher_prompt_sha256"], "teacher-view")
         pending = worker._scored
+        for item in pending.scored:
+            prepared = item.prepared
+            reason_position = prepared.text.index("<reason>") + len("<reason>")
+            self.assertTrue(prepared.parsed.format_valid)
+            self.assertTrue(prepared.content_mask[reason_position])
+            self.assertFalse(prepared.vision_mask[reason_position])
+            self.assertGreater(prepared.content_count, reason_position)
+            self.assertEqual(item.record["opsd"]["content_tokens"], float(prepared.content_count))
         prompt = worker.runtime.encode_student(ProxyExample.from_dict(_payload()))
         expected_policy = expected_opsd = expected_score_function_sum = 0.0
         content_lengths = []

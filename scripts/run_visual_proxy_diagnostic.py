@@ -14,6 +14,7 @@ import math
 import os
 import subprocess
 import time
+from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -30,6 +31,26 @@ def _sha256(path: Path) -> str:
 def _digest_json(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
                                       separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+
+
+def _current_prompt_protocol() -> tuple[str, str]:
+    """Bind diagnostic artifacts to the imported output protocol and source."""
+    from sure_vl import proxy_prompt
+
+    return proxy_prompt.PROXY_OUTPUT_PROTOCOL, _sha256(Path(proxy_prompt.__file__).resolve())
+
+
+def _assert_student_prompt_hash(
+    prompt_ids: Sequence[int], expected_sha256: str, example_id: str,
+) -> str:
+    """Verify the freshly encoded normal Student prefix against prepare."""
+    actual = _digest_json([int(token_id) for token_id in prompt_ids])
+    if actual != expected_sha256:
+        raise ValueError(
+            f"normal Student prompt IDs changed since prepare for {example_id}: "
+            f"expected {expected_sha256}, got {actual}"
+        )
+    return actual
 
 
 def _git_commit() -> str | None:
@@ -145,6 +166,7 @@ def _prepare(args: argparse.Namespace) -> int:
     args.tokenpack.parent.mkdir(parents=True, exist_ok=True)
     if args.tokenpack.exists():
         raise FileExistsError(args.tokenpack)
+    output_protocol, prompt_source_sha256 = _current_prompt_protocol()
     processor, template_hash = _load_processor(args.model)
     model = _load_model(args.model, args.device)
     stops = configure_generation_terminators(model, processor.tokenizer)
@@ -185,8 +207,11 @@ def _prepare(args: argparse.Namespace) -> int:
                                                           generation_eos_token_id=stops)
             record = {
                 "example_id": example.id, "completion_ids": ids,
-                "completion_text": processor.tokenizer.decode(body_ids, skip_special_tokens=False,
-                                                                 clean_up_tokenization_spaces=False),
+                "completion_text": prepared.text,
+                "proxy_output_protocol": output_protocol,
+                "proxy_prompt_source_sha256": prompt_source_sha256,
+                "reason_text": prepared.parsed.reasoning_text,
+                "format_errors": list(prepared.format_errors),
                 "prompt_token_sha256": _digest_json(prefix_ids[0].tolist()),
                 "student_image_sha256": _sha256(Path(row["image"])),
                 "teacher_image_sha256": _sha256(Path(row["teacher_image"])),
@@ -206,6 +231,8 @@ def _prepare(args: argparse.Namespace) -> int:
             del encoded, generated, sequences
     _write_json(args.output / "manifest.json", {
         "mode": "prepare", "status": "completed", "zero_update": True,
+        "proxy_output_protocol": output_protocol,
+        "proxy_prompt_source_sha256": prompt_source_sha256,
         "optimizer_updates": 0, "gradient_or_backward_calls": 0,
         "source_commit": _git_commit(), "script_sha256": _sha256(Path(__file__)),
         "validation_manifest": str(args.manifest.resolve()),
@@ -265,7 +292,8 @@ def _model_fingerprint(model_path: Path) -> dict[str, Any]:
 
 
 def _tokenpack_rows(path: Path) -> list[dict[str, Any]]:
-    records = [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
+    with path.open(encoding="utf-8") as source:
+        records = [json.loads(line) for line in source if line.strip()]
     if not records or len(records) > 32:
         raise ValueError("tokenpack must contain 1..32 frozen validation samples")
     ids = [record.get("example_id") for record in records]
@@ -277,6 +305,50 @@ def _tokenpack_rows(path: Path) -> list[dict[str, Any]]:
                 or any(type(item) is not int or item < 0 for item in completion)):
             raise ValueError("tokenpack completion IDs must be a nonempty integer array of at most 256 tokens")
     return records
+
+
+def _validate_tokenpack_protocol(
+    tokenpack_path: Path,
+    prepare_manifest_path: Path,
+    *,
+    expected_protocol: str,
+    expected_prompt_source_sha256: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Reject a stale/mixed prompt protocol before loading CUDA models."""
+    manifest = json.loads(prepare_manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or (manifest.get("mode"), manifest.get("status")) != (
+        "prepare", "completed"
+    ):
+        raise ValueError("prepare manifest is missing or incomplete")
+    if manifest.get("proxy_output_protocol") != expected_protocol:
+        raise ValueError("prepare manifest proxy output protocol differs from current code")
+    if manifest.get("proxy_prompt_source_sha256") != expected_prompt_source_sha256:
+        raise ValueError("prepare manifest proxy_prompt.py source SHA differs from current code")
+    if manifest.get("tokenpack_sha256") != _sha256(tokenpack_path):
+        raise ValueError("tokenpack bytes differ from the prepare manifest SHA")
+    records = _tokenpack_rows(tokenpack_path)
+    if manifest.get("selected_ids") != [row["example_id"] for row in records]:
+        raise ValueError("tokenpack example IDs/order differ from the prepare manifest")
+    if manifest.get("selected_count") != len(records):
+        raise ValueError("tokenpack row count differs from the prepare manifest")
+    for index, record in enumerate(records, 1):
+        if record.get("proxy_output_protocol") != expected_protocol:
+            raise ValueError(f"tokenpack row {index} has an old or mixed proxy output protocol")
+        if record.get("proxy_prompt_source_sha256") != expected_prompt_source_sha256:
+            raise ValueError(f"tokenpack row {index} has an old or mixed proxy_prompt.py source SHA")
+        if "reason_text" not in record or (
+            record["reason_text"] is not None and not isinstance(record["reason_text"], str)
+        ):
+            raise ValueError(f"tokenpack row {index}.reason_text must be text or null")
+        errors = record.get("format_errors")
+        if not isinstance(errors, list) or any(not isinstance(error, str) for error in errors):
+            raise ValueError(f"tokenpack row {index}.format_errors must be a text array")
+        digest = record.get("prompt_token_sha256")
+        if not isinstance(digest, str) or len(digest) != 64 or any(
+            character not in "0123456789abcdef" for character in digest
+        ):
+            raise ValueError(f"tokenpack row {index} lacks a valid Student prompt token SHA")
+    return records, manifest
 
 
 def _token_diagnostics(p_cpu: Any, q_plus_cpu: Any, q_minus_cpu: Any, *, device: str,
@@ -331,6 +403,16 @@ def _token_diagnostics(p_cpu: Any, q_plus_cpu: Any, q_minus_cpu: Any, *, device:
 
 
 def _score(args: argparse.Namespace) -> int:
+    if args.num_shards < 1 or not 0 <= args.shard_index < args.num_shards:
+        raise ValueError("shard-index must be in [0, num-shards)")
+    output_protocol, prompt_source_sha256 = _current_prompt_protocol()
+    tokenpack, prepare_manifest = _validate_tokenpack_protocol(
+        args.tokenpack, args.prepare_manifest,
+        expected_protocol=output_protocol,
+        expected_prompt_source_sha256=prompt_source_sha256,
+    )
+    # Protocol and source compatibility are checked before importing the
+    # training stack, initializing CUDA, or loading either full model.
     import torch
     from PIL import Image
     from sure_vl.proxy_prompt import build_proxy_teacher_messages
@@ -348,8 +430,6 @@ def _score(args: argparse.Namespace) -> int:
     # allocation has initialized the device's memory-stat counters.
     torch.empty(1, device=args.device)
     torch.cuda.reset_peak_memory_stats()
-    if args.num_shards < 1 or not 0 <= args.shard_index < args.num_shards:
-        raise ValueError("shard-index must be in [0, num-shards)")
     all_rows, frozen_rows = _rows(args.manifest, args.ids_file, None)
     by_id = {row["example_id"]: row for row in all_rows}
     provenance_path = args.manifest.parent / "provenance.json"
@@ -358,7 +438,11 @@ def _score(args: argparse.Namespace) -> int:
     source_provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     scene_groups = {item["id"]: item["original_scene_group"]
                     for item in source_provenance["examples"]}
-    tokenpack = _tokenpack_rows(args.tokenpack)
+    if prepare_manifest.get("validation_manifest_sha256") != _sha256(args.manifest):
+        raise ValueError("validation manifest bytes differ from prepare")
+    expected_ids_sha = None if args.ids_file is None else _sha256(args.ids_file)
+    if prepare_manifest.get("ids_file_sha256") != expected_ids_sha:
+        raise ValueError("frozen ID selection differs from prepare")
     frozen_ids = [row["example_id"] for row in frozen_rows]
     if [record["example_id"] for record in tokenpack] != frozen_ids[:len(tokenpack)]:
         raise ValueError("tokenpack IDs/order differ from the frozen validation set")
@@ -373,6 +457,8 @@ def _score(args: argparse.Namespace) -> int:
         raise FileExistsError(f"output directory is not empty: {args.output}")
     args.output.mkdir(parents=True, exist_ok=True)
     processor, template_hash = _load_processor(args.model)
+    if template_hash != prepare_manifest.get("chat_template_sha256"):
+        raise ValueError("processor chat template differs from prepare")
     student = _load_model(args.model, args.device)
     teacher = _load_model(args.teacher, args.device)
     stops = configure_generation_terminators(student, processor.tokenizer)
@@ -430,7 +516,10 @@ def _score(args: argparse.Namespace) -> int:
             correct, _ = grade_proxy_answer(example, prepared.parsed.answer)
             positions = list(prepared.vision_positions)
             if (positions != packed["vision_positions"] or prepared.content_count != packed["content_count"]
-                    or correct is not packed["answer_correct"]):
+                    or correct is not packed["answer_correct"]
+                    or prepared.text != packed["completion_text"]
+                    or prepared.parsed.reasoning_text != packed["reason_text"]
+                    or list(prepared.format_errors) != packed["format_errors"]):
                 raise RuntimeError(f"tokenpack parsing/answer changed for {example_id}")
             last = positions[-1] + 1 if positions else 0
             selected = torch.as_tensor(positions, dtype=torch.long, device=args.device)
@@ -441,9 +530,15 @@ def _score(args: argparse.Namespace) -> int:
                 example.teacher_question or example.question, example.teacher_evidence,
             )
 
-            def logits_for(role: str, messages: list[dict[str, Any]], image: Any):
+            def logits_for(role: str, messages: list[dict[str, Any]], image: Any,
+                           *, expected_student_prompt_sha256: str | None = None):
                 encoded = _encode_messages(context, _prepared_messages(messages, image))
                 prompt_hash = _digest_json(encoded["input_ids"][0].tolist())
+                if expected_student_prompt_sha256 is not None:
+                    _assert_student_prompt_hash(
+                        encoded["input_ids"][0].tolist(),
+                        expected_student_prompt_sha256, example_id,
+                    )
                 image_hash = _pixel_sha256(image)
                 fingerprint = _digest_json({"role": role, "prompt_sha256": prompt_hash,
                                             "image_pixel_sha256": image_hash,
@@ -474,8 +569,15 @@ def _score(args: argparse.Namespace) -> int:
                     plus_image, plus_messages = original, teacher_messages
                 else:
                     plus_image, plus_messages = correct_crop, teacher_messages
-                p, p_fingerprint = logits_for("student", student_messages, student_image)
+                p, p_fingerprint = logits_for(
+                    "student", student_messages, student_image,
+                    expected_student_prompt_sha256=(
+                        packed["prompt_token_sha256"] if condition == "normal" else None
+                    ),
+                )
                 q_minus, minus_fingerprint = logits_for("teacher", student_messages, student_image)
+                if p_fingerprint["prompt_sha256"] != minus_fingerprint["prompt_sha256"]:
+                    raise RuntimeError(f"same-view Teacher prompt IDs differ from Student for {example_id}")
                 if condition == "identity_teacher":
                     q_plus, plus_fingerprint = q_minus, dict(minus_fingerprint)
                 else:
@@ -540,6 +642,10 @@ def _score(args: argparse.Namespace) -> int:
     torch.cuda.synchronize()
     _write_json(args.output / "manifest.json", {
         "mode": "score", "status": "completed", "completed": True, "zero_update": True,
+        "proxy_output_protocol": output_protocol,
+        "proxy_prompt_source_sha256": prompt_source_sha256,
+        "prepare_manifest": str(args.prepare_manifest.resolve()),
+        "prepare_manifest_sha256": _sha256(args.prepare_manifest),
         "optimizer_updates": 0, "gradient_or_backward_calls": 0, "ema_updates": 0,
         "source_commit": _git_commit(), "script_sha256": _sha256(Path(__file__)),
         "validation_manifest": str(args.manifest.resolve()),
@@ -595,6 +701,7 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--device", default="cuda:0")
         if mode == "score":
             command.add_argument("--teacher", type=Path, required=True)
+            command.add_argument("--prepare-manifest", type=Path, required=True)
             command.add_argument("--shard-index", type=int, default=0)
             command.add_argument("--num-shards", type=int, default=1)
     args = parser.parse_args(argv)
@@ -604,6 +711,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("ids-file does not exist")
     if args.mode == "score" and (not args.teacher.is_dir() or not args.tokenpack.is_file()):
         parser.error("teacher and tokenpack must exist locally")
+    if args.mode == "score" and not args.prepare_manifest.is_file():
+        parser.error("prepare-manifest must exist locally")
     return _prepare(args) if args.mode == "prepare" else _score(args)
 
 

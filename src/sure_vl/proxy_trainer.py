@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .proxy_method import empty_visual_proxy, visual_certainty_proxy
-from .proxy_prompt import (build_proxy_masks, build_proxy_teacher_messages,
+from .proxy_prompt import (PROXY_OUTPUT_PROTOCOL, build_proxy_masks, build_proxy_teacher_messages,
                            parse_proxy_completion, split_proxy_generated_eos)
 from .proxy_protocol import ProxyExample, verify_proxy_answer
 from .teacher_ema import OptimizerEvidenceCallback
@@ -210,6 +210,7 @@ class ProxyGOLDTrainer(SureVLGOLDTrainer):
         }.items() if value is not None}
         record = {
             "id": example.id, "raw_completion": text, "vision_text": parsed.vision_text,
+            "output_protocol": PROXY_OUTPUT_PROTOCOL, "reason_text": parsed.reasoning_text,
             "answer": parsed.answer, "answer_correct": correct,
             "answer_label_available": answer_label is not None,
             "visual_confidence": v, "answer_confidence": r,

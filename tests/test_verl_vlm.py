@@ -125,8 +125,13 @@ class FakeVLMRuntimeTests(unittest.TestCase):
         teacher_text = self.processor.calls[1]["text"][0]
         self.assertEqual([message["role"] for message in self.processor.messages[0]],
                          ["system", "user"])
+        self.assertEqual([message["role"] for message in self.processor.messages[1]],
+                         ["system", "user"])
         self.assertEqual(self.processor.messages[0][1]["content"][0]["type"], "image")
-        self.assertIn("Start with <vision>", student_text)
+        self.assertEqual(self.processor.messages[1][1]["content"][0]["type"], "image")
+        self.assertIn("Start your response with <vision>", student_text)
+        self.assertIn("<reason>", self.processor.messages[0][0]["content"][0]["text"])
+        self.assertIn("<reason>", self.processor.messages[1][0]["content"][0]["text"])
         self.assertNotIn("SECRET_LABEL", student_text)
         self.assertNotIn("SECRET_LABEL", teacher_text)
         self.assertNotIn("objects", student_text)

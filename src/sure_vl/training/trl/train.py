@@ -9,7 +9,7 @@ from pathlib import Path
 from ...train_proxy import (TrainingPlan, _sha256, _source_provenance, _runtime_versions, configure_generation_terminators,
                             configure_nonthinking_template, load_plan)
 
-DEFAULT_CONFIG = Path(__file__).resolve().parents[4] / "configs/trl/qwen35_08b_visionopd_100step.json"
+DEFAULT_CONFIG = Path(__file__).resolve().parents[4] / "configs/trl/qwen35_08b_visionopd_protocol_v2_100step.json"
 
 
 def load_grpo_plan(path=DEFAULT_CONFIG) -> TrainingPlan:

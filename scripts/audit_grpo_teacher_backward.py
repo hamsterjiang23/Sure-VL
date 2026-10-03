@@ -16,6 +16,7 @@ from trl.trainer.utils import split_pixel_values_by_grid, split_tensor_dict, uns
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from sure_vl.proxy_data import manifest_to_proxy_rows
+from sure_vl.proxy_prompt import PROXY_OUTPUT_PROTOCOL
 from sure_vl.train_proxy import configure_generation_terminators, configure_nonthinking_template
 from sure_vl.training.trl.train import _dataset
 from sure_vl.training.trl.trainer import SureVLGRPOTrainer
@@ -166,6 +167,7 @@ def main():
         raise RuntimeError("frozen Teacher received a gradient")
     report = {
         "kind": "real Qwen GRPO proxy G4 zero-update forward/backward audit",
+        "output_protocol": PROXY_OUTPUT_PROTOCOL,
         "example_id": row["example_id"], "template_sha256": template_sha,
         "student_prompt_json_sha256": hashlib.sha256(
             json.dumps(row["prompt"], ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -180,7 +182,9 @@ def main():
         "teacher_forward_counts": teacher_calls,
         "qminus_sameview_direct_diagnostic": {"actual_sampled_prefixes": len(qminus_sameview_logp_deltas), "max_abs_sampled_logp_delta": max(qminus_sameview_logp_deltas), "algorithm_reward_branch_calls": teacher_calls["q_minus"]},
         "content_report_partition_passed": mask_pass,
-        "record_summary": [{"format_errors": r["format_errors"], "vision_tokens": r["vision_tokens"],
+        "record_summary": [{"raw_completion": r["raw_completion"], "reason_text": r["reason_text"],
+                            "output_protocol": r["output_protocol"],
+                            "format_errors": r["format_errors"], "vision_tokens": r["vision_tokens"],
                             "proxy_fallback": r["proxy_fallback"],
                             "answer_correct": r["answer_correct"],
                             "content_tokens": r["content_tokens"],
