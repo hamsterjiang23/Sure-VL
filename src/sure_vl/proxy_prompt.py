@@ -38,6 +38,7 @@ _FORMAT_GUIDANCE = (
     "<answer_confidence>...</answer_confidence></confidence>. "
     "Output exactly these four blocks in this order and no other text. "
     "Keep <vision> within 40 words and a nonempty <reason> within 60 words. "
+    "Use one short sentence for each of these two blocks. "
     "Use <reason> for brief task deduction; do not open a builtin thinking block. "
     "If answer choices are given, output only the option letter in <answer>; "
     "otherwise, for a numeric answer, output only the number. "
@@ -51,7 +52,14 @@ _FORMAT_GUIDANCE = (
     "<reason>brief deduction</reason>\n"
     "<answer>final answer</answer>\n"
     "<confidence><visual_confidence>integer 0 to 10</visual_confidence>"
-    "<answer_confidence>integer 0 to 10</answer_confidence></confidence>"
+    "<answer_confidence>integer 0 to 10</answer_confidence></confidence>\n"
+    "Format-only example for an unrelated counting question. Use your actual image and question; "
+    "choose your own observations, answer, and two independent scores, without copying this example:\n"
+    "<vision>Three indistinct boxes appear in shadow.</vision>\n"
+    "<reason>Counting the visible boxes gives three.</reason>\n"
+    "<answer>3</answer>\n"
+    "<confidence><visual_confidence>4</visual_confidence>"
+    "<answer_confidence>6</answer_confidence></confidence>"
 )
 
 
