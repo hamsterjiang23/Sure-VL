@@ -43,7 +43,15 @@ _FORMAT_GUIDANCE = (
     "otherwise, for a numeric answer, output only the number. "
     "Visual confidence is your internal certainty about the visual description given the image, "
     "not externally verified visual truth. Answer confidence is your unconditional chance "
-    "that the final answer is correct. Use plain integers, without percentage signs or Markdown."
+    "that the final answer is correct. Use plain integers, without percentage signs or Markdown. "
+    "After </answer>, you MUST continue with both confidence scores and close </confidence> "
+    "before ending the response.\n"
+    "Required response structure (replace every placeholder with your own response):\n"
+    "<vision>visual observations</vision>\n"
+    "<reason>brief deduction</reason>\n"
+    "<answer>final answer</answer>\n"
+    "<confidence><visual_confidence>integer 0 to 10</visual_confidence>"
+    "<answer_confidence>integer 0 to 10</answer_confidence></confidence>"
 )
 
 
