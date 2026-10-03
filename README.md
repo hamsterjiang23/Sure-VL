@@ -71,3 +71,5 @@ See the [metric registry](docs/metrics_registry.md) for loss scale, gradient nor
 The earlier official-data GOLD run was **stopped at 80 attempts** after confirming that its Qwen3.5 generation dropped `mm_token_type_ids` while rescoring used multimodal positions. Its results are invalid for on-policy training. [The audit](docs/trl_training_audit.md) records the mechanism and the native GRPO sampling parity check. That check used real images and actual sampled IDs, with **zero optimizer updates**; subsequent update evidence is reported separately.
 
 Historical [100-update pilot evidence](docs/validation-proxy-100step-v1.md) demonstrated optimizer execution but failed output quality. Neither those runs nor source tests establish calibration improvement.
+
+The corrected [full official-data TRL run](docs/validation-full-grpo-100step-v1.md) completed **100 successful updates**, with Adam and Teacher EMA both at 100, zero skips, 400 actual rollouts and all six fixed assessments. Its W&B state is finished. Output coverage reached 32/32 on the fixed assessment; the report preserves paired calibration denominators and the limits of this small-model result.
