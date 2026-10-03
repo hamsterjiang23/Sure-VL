@@ -53,7 +53,7 @@ B. cylinder
 C. cone
 D. pyramid
 Answer with the option's letter from the given choices.
-Start your response with <vision>.
+Write all four blocks in this exact order, with all six opening and six closing tags: <vision>...</vision><reason>...</reason><answer>...</answer><confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Both inner confidence values must be integers 0 to 10. Use one brief sentence in vision and one in reason. Start your response with <vision>.
 ```
 
 ## Exact privileged Teacher messages

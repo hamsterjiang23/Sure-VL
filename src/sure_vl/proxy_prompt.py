@@ -135,7 +135,14 @@ def build_proxy_student_messages(example: ProxyExample) -> list[dict[str, Any]]:
         (f"Image focus: {hint.strip()}\n" if hint else "")
         + f"Question: {example.question.strip()}"
     )
-    user += "\nStart your response with <vision>."
+    user += (
+        "\nWrite all four blocks in this exact order, with all six opening and six closing tags: "
+        "<vision>...</vision><reason>...</reason><answer>...</answer>"
+        "<confidence><visual_confidence>...</visual_confidence>"
+        "<answer_confidence>...</answer_confidence></confidence>. "
+        "Both inner confidence values must be integers 0 to 10. "
+        "Use one brief sentence in vision and one in reason. Start your response with <vision>."
+    )
     return [
         {"role": "system", "content": [{"type": "text", "text": system}]},
         {"role": "user", "content": [{"type": "image"}, {"type": "text", "text": user}]},
