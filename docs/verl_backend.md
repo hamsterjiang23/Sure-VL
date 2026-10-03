@@ -45,6 +45,9 @@ package, even though this custom transport path does not import their PPO,
 SFT, or dataset modules. An editable install still resolves those declared
 package dependencies. The isolated project separately pins Pillow,
 torchvision, Accelerate, and W&B for model/image execution and tracking.
+Its explicit CPU API dependencies include `TransferQueue==0.1.10`,
+`msgspec==0.22.0`, and `pyzmq==27.2.0`; the vendored `DataProto` import reaches
+veRL's TransferQueue compatibility module.
 
 ## One update
 
@@ -80,11 +83,27 @@ use FSDP or vLLM rollout. The policy-loss function computes a ratio, but its
 forward value is one because `old_log_prob` is detached from the current
 log probability in the single update iteration.
 
+The logged `policy_loss` is the actual official ratio-based GRPO objective:
+for each of four completions it averages `-advantage` over that completion's
+generated tokens, then divides by four. Its gradient flows through the ratio.
+`opsd_loss` likewise averages each completion's content-token loss before the
+four-sample average. `score_function_token_mean_diagnostic` weights all tokens
+together and is only a diagnostic; it is not the optimized policy loss.
+`grad_norm` is the norm returned by PyTorch's clipping call before clipping,
+while `grad_norm_after_clip` measures the gradients afterward.
+The Worker uses the same linear learning-rate recipe as the TRL run: no warmup
+and decay over the configured successful-update budget. It advances the
+scheduler only after `optimizer.step()` succeeds. `learning_rate_used` records
+the rate applied to that update; `learning_rate_next` records the rate after
+the scheduler advances. Checkpoint evidence includes `scheduler_last_epoch`
+and the scheduler state, which must agree with successful optimizer updates.
+
 ## Launch and evidence
 
 The driver entry point is `sure-vl-train-verl`. The current 100-update config
-points to the frozen official 512-row training subset and disjoint 128-row
-validation subset. Inspect that config on the server without starting Ray,
+points to the frozen full official 5,985-row training split and disjoint 256-row
+validation split. Its source and split hashes are recorded in
+[`visionopd_full_v1.json`](evidence/visionopd_full_v1.json). Inspect the config on the server without starting Ray,
 then launch it in a fresh output directory:
 
 ```bash
@@ -103,6 +122,25 @@ an attempted step alone is not a completed experiment. Even a completed
 small-model run requires held-out coverage and calibration results before an
 effectiveness claim.
 
-At this stage, source review and CPU-side checks have not established a
-successful veRL GPU update. The command above is a launch recipe; its output
-must be audited before it is described as a completed training run.
+The separate audit environment passed 14 unique CPU tests, including official
+`DataProto`/Ray WorkerGroup transport, TinyWorker RPCs, and the grouped
+objective checks. See
+[`verl_cpu_runtime_v1.json`](evidence/verl_cpu_runtime_v1.json) for the exact
+versions and tested file hashes. That audit reused the root environment's
+packages through a read-only path; the fully independent
+`uv sync --project envs/verl --frozen` has not completed. It loaded no Qwen model and made zero
+GPU optimizer updates.
+
+The separate [real Qwen zero-update audit](evidence/verl_qwen_zero_update_v1.json)
+then passed through the official Ray WorkerGroup on GPU 0. It sampled four
+actual responses with the training length limit of 256, scored the privileged
+Teacher four times and the same-input Teacher baseline three times, and obtained
+two nonfallback visual proxies. Raw generation versus full-forward sampled-token
+log-probabilities differ by at most `1.60e-5` (`1.31e-4` over the full vocabulary),
+within the fixed `1e-3` gate. Group advantages match separate reward centering,
+Teacher parameters stay frozen, Student gradients are absent, and Adam/EMA/LR
+update counters remain zero. The audit discards its pending group before closing.
+
+The real Qwen GPU backward/update path and a full veRL training run have not
+been executed. The launch command above remains a recipe for that remaining
+runtime gate. The completed 100-update experiment in this repository used TRL.

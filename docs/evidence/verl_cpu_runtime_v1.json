@@ -1,0 +1,72 @@
+{
+  "status": "cpu_api_and_transport_passed_full_model_unverified",
+  "observed_at_utc": "2026-10-03T00:34:43Z",
+  "host": "v100-2-hamster",
+  "audit_workspace": "/data/LHJ/Sure-VL/outputs/verl_cpu_audit",
+  "audit_python": "/data/LHJ/Sure-VL/outputs/verl_cpu_audit/.venv/bin/python",
+  "environment_method": "Separate uv venv with a read-only .pth path to the existing root venv site-packages. Missing CPU API packages were installed only into the audit venv with uv pip.",
+  "root_environment": {
+    "path": "/data/LHJ/Sure-VL/.venv",
+    "modified_by_audit": false,
+    "torch_file": "/data/LHJ/Sure-VL/.venv/lib/python3.10/site-packages/torch/__init__.py",
+    "torch_version": "2.6.0+cu124",
+    "ray_present_before_and_after": false,
+    "tensordict_present_before_and_after": false
+  },
+  "audit_imports": {
+    "torch": "2.6.0+cu124",
+    "transformers": "5.18.0",
+    "ray": "2.53.0",
+    "tensordict": "0.10.0",
+    "hydra_core": "1.3.2",
+    "omegaconf": "2.3.0",
+    "transferqueue": "0.1.10",
+    "msgspec": "0.22.0",
+    "pyzmq": "27.2.0",
+    "verl_import_file": "/data/LHJ/Sure-VL/third_party/verl/verl/__init__.py",
+    "official_algorithms_imported": [
+      "verl.trainer.ppo.core_algos.compute_grpo_outcome_advantage",
+      "verl.trainer.ppo.core_algos.compute_policy_loss_vanilla"
+    ]
+  },
+  "official_verl_source": {
+    "url": "https://github.com/verl-project/verl",
+    "pinned_commit": "8718ca30a3f002f93b7c4fd99b9b2506718681bc",
+    "commit_record": "configs/reference_sources.json",
+    "vendor_path": "third_party/verl",
+    "note": "Vendored snapshot is an unpacked tree without its own .git directory; git -C third_party/verl would resolve the Sure-VL parent repository."
+  },
+  "tested_copy_sha256": {
+    "src/sure_vl/training/verl/worker.py": "14963d29c4305a6018a91292545ea889f48ae9d212d378a9d4a4fcc607d783af",
+    "src/sure_vl/training/verl/driver.py": "ec23f344e55a126dab5e571337a18facc41895fae89596c697824e86079ded53",
+    "src/sure_vl/training/verl/vlm.py": "5b8761462a581265c85d8b81fefcd77c07bba97f4bfb140765c80787aab6815e",
+    "tests/test_verl_worker.py": "0368f6878aabc4ce0181e041ca4f83d0383022df9f1a65f1ff758230b80529c4"
+  },
+  "test_commands": {
+    "environment_prefix": "env CUDA_VISIBLE_DEVICES= PYTHONPATH=/data/LHJ/Sure-VL/outputs/verl_cpu_audit/src:/data/LHJ/Sure-VL/third_party/verl",
+    "base": "/data/LHJ/Sure-VL/outputs/verl_cpu_audit/.venv/bin/python -m unittest discover -s /data/LHJ/Sure-VL/outputs/verl_cpu_audit/tests -p 'test_verl_*.py' -v",
+    "ray_transport": "SURE_VL_RUN_RAY_TRANSPORT=1 /data/LHJ/Sure-VL/outputs/verl_cpu_audit/.venv/bin/python -m unittest discover -s /data/LHJ/Sure-VL/outputs/verl_cpu_audit/tests -p 'test_verl_transport.py' -v",
+    "ray_worker": "SURE_VL_RUN_RAY_WORKER=1 /data/LHJ/Sure-VL/outputs/verl_cpu_audit/.venv/bin/python -m unittest discover -s /data/LHJ/Sure-VL/outputs/verl_cpu_audit/tests -p 'test_verl_worker.py' -v"
+  },
+  "test_results": {
+    "base": {"run": 14, "passed": 12, "skipped_opt_in_ray": 2},
+    "ray_transport": {"run": 1, "passed": 1, "gpu_resources": 0},
+    "ray_worker": {"run": 4, "passed": 4, "gpu_resources": 0},
+    "unique_tests_passed_across_commands": 14,
+    "verified_scopes": [
+      "official veRL DataProto dispatch and collect through a CPU Ray WorkerGroup",
+      "custom TinyWorker CPU Ray generate, detached score, grouped update and EMA RPC",
+      "G4 official advantage centering, official sequence-mean policy scalar, and per-sequence OPSD mean",
+      "finite update and nonfinite skip gates, linear LR scheduler, checkpoint evidence",
+      "VLM fake processor multimodal kwargs, separate Student and Teacher prompts, causal response alignment and prompt-image digest checks"
+    ]
+  },
+  "boundaries": {
+    "qwen_model_loaded": false,
+    "gpu_optimizer_updates": 0,
+    "gpu_training_launched": false,
+    "full_isolated_uv_sync_frozen_completed": false,
+    "heldout_model_metrics_available": false,
+    "conclusion": "The official veRL APIs and the custom CPU Worker path run with pinned Torch, Ray, and TensorDict. This does not validate the Qwen3.5 CUDA memory, multimodal generation distribution, or a full veRL training step."
+  }
+}

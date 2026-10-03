@@ -1,0 +1,32 @@
+[project]
+name = "sure-vl-verl-runtime"
+version = "0.1.0"
+description = "Isolated single-GPU veRL Ray Worker runtime for Sure-VL"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "sure-vl",
+  "verl",
+  "accelerate==1.15.0",
+  "TransferQueue==0.1.10",
+  "msgspec==0.22.0",
+  "numpy>=2,<3",
+  "packaging>=24",
+  "pillow==12.3.0",
+  "pyzmq==27.2.0",
+  "ray[default]==2.53.0",
+  "tensordict==0.10.0",
+  "torch==2.6.0",
+  "torchvision==0.21.0",
+  "transformers==5.18.0",
+  "wandb==0.30.0",
+]
+
+[tool.uv.sources]
+sure-vl = { path = "../..", editable = true }
+verl = { path = "../../third_party/verl", editable = true }
+
+[tool.uv]
+# The pinned upstream snapshot declares transformers<5.13 for its standard
+# backends. This isolated custom Worker uses the Qwen3.5 model API in 5.18;
+# compatibility is gated by import/DataProto/Ray and bounded model checks.
+override-dependencies = ["transformers==5.18.0"]

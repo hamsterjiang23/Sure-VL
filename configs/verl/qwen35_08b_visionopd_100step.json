@@ -1,0 +1,80 @@
+{
+  "method": "internal_visual_proxy",
+  "model_id": "/data/LHJ/PGR-Probe/.hf_cache/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+  "model_revision": null,
+  "train_manifest": "../../data/vision_opd_6k_full/train.jsonl",
+  "validation_manifest": "../../data/vision_opd_6k_full/validation.jsonl",
+  "output_dir": "../../outputs/qwen35-08b-verl-visionopd-full-100step-wandb-v1",
+  "setting": {
+    "target_world_size": 1,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "generation_batch_size": 4,
+    "num_generations": 4,
+    "num_train_epochs": 15,
+    "max_steps": 100,
+    "learning_rate": 1e-06,
+    "rollout_temperature": 1.0,
+    "rollout_top_p": 1.0,
+    "max_completion_length": 256,
+    "max_pixels": 65536,
+    "bf16": false,
+    "fp16": false,
+    "enable_thinking": false,
+    "gradient_checkpointing": true,
+    "max_grad_norm": 1.0,
+    "seed": 42,
+    "logging_steps": 1,
+    "save_steps": 100
+  },
+  "proxy": {
+    "alpha": 0.5,
+    "tau_s": 0.5,
+    "lambda_b": 1.0,
+    "min_vision_tokens": 8,
+    "chunk_size": 16
+  },
+  "reward": {
+    "answer_utility": 1.0,
+    "rho_answer": 1.0,
+    "rho_visual": 1.0,
+    "format_penalty": 1.0
+  },
+  "teacher": {
+    "mode": "ema",
+    "ema_decay": 0.99
+  },
+  "loss": {
+    "policy_weight": 1.0,
+    "opsd_weight": 1.0,
+    "opsd_beta": 0.0,
+    "opsd_temperature": 1.1,
+    "opsd_token_clip": 0.05,
+    "diagnostic_tokens": 4
+  },
+  "validation": {
+    "subset_size": 32,
+    "subset_seed": 42,
+    "every_n_steps": 20,
+    "max_new_tokens": 256,
+    "temperature": 0.6,
+    "top_p": 0.95
+  },
+  "tracking": {
+    "backend": "wandb",
+    "mode": "online",
+    "project": "Sure-VL",
+    "entity": "jiangcangshu0-nanjing-university",
+    "run_name": "verl-visionopd-qwen35-08b-full-100step-v1"
+  },
+  "backend": "verl_single_gpu",
+  "grpo": {
+    "loss_type": "grpo",
+    "scale_rewards": "none",
+    "num_iterations": 1
+  },
+  "verl": {
+    "ray_num_cpus": 4,
+    "object_store_memory_mb": 1024
+  }
+}
