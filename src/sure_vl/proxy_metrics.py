@@ -14,6 +14,11 @@ from statistics import fmean
 from typing import Any
 
 
+_INVALID_REASON_ERRORS = frozenset({
+    "missing_or_invalid_reason", "empty_reason", "legacy_reasoning_tag",
+})
+
+
 def _probability(value: Any, name: str, *, optional: bool = False) -> float | None:
     if value is None and optional:
         return None
@@ -143,6 +148,13 @@ def _normalized_records(records: Sequence[Mapping[str, Any]]) -> list[dict[str, 
             not isinstance(error, str) for error in errors
         ):
             raise ValueError(f"{record_id}.format_errors must be a list of strings")
+        reason_text = record.get("reason_text")
+        if reason_text is not None and not isinstance(reason_text, str):
+            raise ValueError(f"{record_id}.reason_text must be text or None")
+        reason_present = bool(
+            isinstance(reason_text, str) and reason_text.strip()
+            and not _INVALID_REASON_ERRORS.intersection(errors)
+        )
         validated_components: dict[str, dict[str, float]] = {}
         for group_name in ("proxy_components", "reward", "opsd"):
             components = record.get(group_name, {})
@@ -174,6 +186,7 @@ def _normalized_records(records: Sequence[Mapping[str, Any]]) -> list[dict[str, 
             "proxy_fallback": fallback,
             "vision_tokens": vision_tokens,
             "format_errors": list(errors),
+            "reason_present": reason_present,
             **validated_components,
         })
     return normalized
@@ -196,6 +209,7 @@ def evaluate_proxy_records(
     threshold = _probability(high_confidence_threshold, "high_confidence_threshold")
     normalized = _normalized_records(records)
     total = len(normalized)
+    reason_present_count = sum(record["reason_present"] for record in normalized)
     correct_count = sum(record["answer_correct"] for record in normalized)
     label_available_count = sum(record["answer_label_available"] for record in normalized)
     answer_pairs = [
@@ -309,6 +323,8 @@ def evaluate_proxy_records(
         "opsd_components": component_means("opsd", normalized),
         "output_coverage": {
             "total_count": total,
+            "reason_present_count": reason_present_count,
+            "reason_present_fraction": reason_present_count / total,
             "answer_label_available_count": label_available_count,
             "answer_label_available_rate": label_available_count / total,
             "format_clean_count": sum(not record["format_errors"] for record in normalized),

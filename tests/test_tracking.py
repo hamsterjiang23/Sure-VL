@@ -64,6 +64,7 @@ def _record(*, fallback=False):
         "visual_proxy": 0.0 if fallback else 0.85,
         "proxy_fallback": fallback, "vision_tokens": 0 if fallback else 12,
         "format_errors": ["missing_confidence"] if fallback else [],
+        "reason_text": None if fallback else "The visible evidence supports the answer.",
         "proxy_components": {} if fallback else {
             "raw_js": 0.12, "baseline_js": 0.02, "corrected_gap": 0.10,
             "teacher_entropy": 0.40,
@@ -144,6 +145,8 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(payload["train/attempt_count"], 2)
             self.assertEqual(payload["train/visual_proxy_eligible_count"], 1)
             self.assertEqual(payload["train/visual_proxy_fallback_count"], 1)
+            self.assertEqual(payload["train/output_coverage/reason_present_count"], 1)
+            self.assertEqual(payload["train/output_coverage/reason_present_fraction"], 0.5)
             self.assertEqual(payload["train/visual_proxy_stats/mean"], 0.85)
             self.assertEqual(payload["train/visual_proxy_stats/variance"], 0.0)
             self.assertEqual(payload["train/visual_proxy_stats/std"], 0.0)
@@ -186,7 +189,8 @@ class TrackingTests(unittest.TestCase):
                 "answer_brier": None, "answer_ece10": math.nan,
                 "visual_proxy_eligible_count": 0,
                 "visual_proxy_stats": {"sample_count": 0, "mean": None, "variance": None},
-                "output_coverage": {"format_clean_rate": 0.25, "format_clean_count": 2},
+                "output_coverage": {"format_clean_rate": 0.25, "format_clean_count": 2,
+                                    "reason_present_count": 3, "reason_present_fraction": 0.375},
                 "generation": {"sample_count": 8, "hit_max_new_tokens_count": 3,
                                "max_new_tokens": 256},
                 "subset_ids": ["private-id"], "optimizer_step": 2,
@@ -197,6 +201,8 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(options, {})
             self.assertEqual(payload["optimizer/successful_updates"], 2)
             self.assertEqual(payload["validation/sample_count"], 8)
+            self.assertEqual(payload["validation/output_coverage/reason_present_count"], 3)
+            self.assertEqual(payload["validation/output_coverage/reason_present_fraction"], 0.375)
             self.assertEqual(payload["validation/visual_proxy_stats/sample_count"], 0)
             self.assertEqual(payload["validation/generation/hit_max_new_tokens_count"], 3)
             self.assertNotIn("validation/answer_brier", payload)

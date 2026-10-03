@@ -65,6 +65,8 @@ CUDA_VISIBLE_DEVICES=0 uv run --no-sync --frozen --extra train --extra tracking 
   --config configs/trl/qwen35_08b_visionopd_protocol_v2_100step.json
 ```
 
+The [v2 prompt verification](docs/prompt-protocol-v2.md) used real images and native GRPO backward with zero optimizer updates. Final base-model format coverage was 7/8 at validation temperature and 2/4 at training temperature; the new 100-step configuration is prepared and has not been launched.
+
 The recipe requests **100 successful optimizer updates** and online W&B. Validation uses the same frozen 32 held-out IDs at step 0, every 20 updates, and step 100. `training_completed.json` is written only after Trainer, Adam state, successful updates, EMA and validation gates agree. A command, process start, rollout or source test is not completion evidence.
 
 See the [metric registry](docs/metrics_registry.md) for loss scale, gradient norms, active policy tokens, output coverage, integer report histograms, calibration denominators, Teacher JS/entropy, OPSD diagnostics and update counts. All cloud families use the successful-update axis through one tracking callback.

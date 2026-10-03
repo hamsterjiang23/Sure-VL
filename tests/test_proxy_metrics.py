@@ -20,7 +20,7 @@ class ProxyMetricsTests(unittest.TestCase):
     def _record(
         record_id, correct, visual_confidence, answer_confidence, proxy, *,
         fallback=False, vision_tokens=5, errors=None, proxy_components=None,
-        reward=None, opsd=None,
+        reward=None, opsd=None, reason_text=None,
     ):
         return {
             "id": record_id,
@@ -31,6 +31,7 @@ class ProxyMetricsTests(unittest.TestCase):
             "proxy_fallback": fallback,
             "vision_tokens": vision_tokens,
             "format_errors": [] if errors is None else errors,
+            "reason_text": reason_text,
             "proxy_components": {} if proxy_components is None else proxy_components,
             "reward": reward,
             "opsd": opsd,
@@ -124,6 +125,28 @@ class ProxyMetricsTests(unittest.TestCase):
         self.assertIsNone(report["visual_proxy_stats"]["mean"])
         self.assertIsNone(report["visual_proxy_answer_relation"]["correlation"])
         self.assertEqual(report["output_coverage"]["both_reports_count"], 0)
+
+    def test_reason_presence_uses_all_attempts_and_excludes_recovered_legacy_reasoning(self):
+        rows = [
+            self._record("valid", True, 0.8, 0.8, 0.7, reason_text="The image shows a square."),
+            self._record("valid_missing_report", False, None, None, 0.6,
+                         reason_text="The shape suggests option B.", errors=["missing_confidence"]),
+            self._record("blank", False, 0.2, 0.2, 0.6,
+                         reason_text="  ", errors=["empty_reason"]),
+            self._record("legacy_reasoning", True, 0.7, 0.7, 0.6,
+                         reason_text="Recovered from <reasoning>.",
+                         errors=["legacy_reasoning_tag", "noncanonical_structure"]),
+            self._record("empty_reason", False, 0.2, 0.2, 0.6,
+                         reason_text="Recovered other text", errors=["empty_reason"]),
+            self._record("misordered_reason", True, 0.7, 0.7, 0.6,
+                         reason_text="Out of order", errors=["misordered_reason"]),
+        ]
+        coverage = evaluate_proxy_records(rows)["output_coverage"]
+        self.assertEqual(coverage["reason_present_count"], 3)
+        self.assertAlmostEqual(coverage["reason_present_fraction"], 3 / 6)
+        self.assertEqual(coverage["format_clean_count"], 1)
+        with self.assertRaisesRegex(ValueError, "reason_text"):
+            evaluate_proxy_records([{**rows[0], "reason_text": 3}])
 
     def test_constant_values_have_undefined_correlation_and_one_is_last_bin(self):
         rows = [

@@ -107,4 +107,25 @@ Old outputs without `reason` can recover their answer and scores but receive `mi
 
 ## Runtime verification
 
-Pending the real-model prompt and native GRPO audit in this change. Historical test results are not used to claim v2 runtime coverage.
+Verified on `v100-2-hamster`, GPU 0, FP32/eager, the cached **base** Qwen3.5-0.8B snapshot, real official paired images, and the existing uv environment. Executed prompt source: `5ad552a4139ffd030e1e9d5d0ceb884b7eb2e60f`. The [full verification record](evidence/prompt_protocol_v2.json) preserves all probe/source/input hashes; the [native GRPO record](evidence/grpo_teacher_backward_protocol_v2.json) includes actual completions and gradient evidence.
+
+Four prompt variants reused the same first eight IDs from the frozen 32-ID validation cohort, the same seeds, temperature 0.6, and a 256-token generation cap:
+
+| Prompt variant | Full four-block format | Nonempty reason | Two valid integer reports |
+| --- | ---: | ---: | ---: |
+| Prose-only System guidance | 0/8 | 6/8 | 0/8 |
+| Explicit placeholder structure | 0/8 | 7/8 | 0/8 |
+| Shared full format example | 3/8 | 6/8 | 5/8 |
+| Final: shared example + Student User order reminder | **7/8** | **7/8** | **7/8** |
+
+The one failed final response is retained with its missing-tag errors. On the seven report-bearing responses, visual integers were `5×2, 8×1, 9×4`; answer integers were `7×1, 8×1, 9×3, 10×2`. These are verbal reports, distinct from the distribution-derived target. The examples did not simply reproduce the illustrative 4/6 pair. The eight IDs were used for format tuning and are not an independent accuracy/calibration benchmark.
+
+The final frozen completions were also scored in all nine existing diagnostic conditions: **72 sample-condition rows, 1,827 visual-token rows**, 35 Student and 63 Teacher forwards. There were seven nonfallback spans (203 visual tokens per condition) and one fallback per condition. Current-protocol/source/prompt-ID checks, per-token aggregation parity and the identity control passed. Student and Teacher here start from identical base weights; the same-view JS is near numerical zero, unlike the historical step-100 EMA drift.
+
+On the seven matched valid spans, the normal mean proxy is `S=0.6788`; blanking the Student image gives `S=0.6933`. The changed prompt has not established that the proxy tracks image quality. These base-model, eight-ID checks do not reproduce the historical 32-ID trained-checkpoint experiment, and no proxy scaling or hyperparameters were changed.
+
+A separate real training question produced four native TRL GRPO responses at the configured training temperature **1.0**. **2/4** were fully canonical; invalid responses retained their format penalties. All four were scored and backpropagated. Content/report masks partitioned the actual completion IDs; exact-Student-input q-minus matched Student sampled log probabilities. The maximum Sure-VL-versus-native sampled log-probability difference was `2.43e-5`. Student gradients were finite and nonzero (pre-clip norm `39.176`); Teacher gradient tensors were **zero**. Unscaled OPSD micro losses ranged from `0.1190` to `0.2611`, with finite joint micro losses. This verifies the native training path, while exposing incomplete base-model format coverage at training temperature.
+
+These checks performed **zero optimizer updates**. No new 100-step training or calibration improvement is claimed. Both GPUs were idle after the checks. Full source tests passed (218 total, 6 skipped); runtime versions were Torch 2.6.0, Transformers 5.18.0, TRL 1.14.1 and Accelerate 1.15.0. Both full manifests were checked: 5,985 training and 256 held-out examples, with **zero extra-evidence rows**.
+
+The shared training/validation monitor adds `output_coverage/reason_present_fraction` (all attempts as denominator), surfaced under `train/` and `validation/`. It counts nonempty new `reason` blocks; full format validity remains a separate metric. The real final validation records aggregate to 7/8 reason presence. The zero-update verification did not upload new training metrics to W&B.

@@ -1,0 +1,209 @@
+{
+  "kind": "real Qwen GRPO proxy G4 zero-update forward/backward audit",
+  "output_protocol": "vision-reason-answer-confidence-v2",
+  "example_id": "vision-opd-6k-04745",
+  "template_sha256": "cb3fcc9eabdfc23ac1ff762bc33a591e9fa146381f13c171aaf4454047ddb3c1",
+  "student_prompt_json_sha256": "69f95120ca94ad9c0ffe38520d15ea92c74cf14f9f62ac34c4599836d0f9b9b1",
+  "prompt_source_sha256": "8423b2c274cd38c8a480571e6e04d6e35c3a02b63ed3a9457e9bed7acaaf8a97",
+  "generation": {
+    "G": 4,
+    "GA": 4,
+    "max_new_tokens": 256,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "sampled_tokens_total": 360,
+    "sampled_tokens_each": [
+      89,
+      149,
+      63,
+      59
+    ]
+  },
+  "max_p_reward_vs_native_grpo_sample_logp_delta": 2.4318695068359375e-05,
+  "teacher_forward_counts": {
+    "q_plus": 8,
+    "q_minus": 4
+  },
+  "qminus_sameview_direct_diagnostic": {
+    "actual_sampled_prefixes": 4,
+    "max_abs_sampled_logp_delta": 0.0,
+    "algorithm_reward_branch_calls": 4
+  },
+  "content_report_partition_passed": true,
+  "record_summary": [
+    {
+      "raw_completion": "<vision>Four purple lanterns dot the top of the building, with one slightly higher than the central structure.</vision>\n\n<reason>Only focused on the objects inside the red bounding box, the statue of the moon and sun is rendered in purple.</reason>\n<answer>B</answer>\n<confidence><visual_confidence>7</visual_confidence><answer_confidence>10</answer_confidence></confidence>",
+      "reason_text": "Only focused on the objects inside the red bounding box, the statue of the moon and sun is rendered in purple.",
+      "output_protocol": "vision-reason-answer-confidence-v2",
+      "format_errors": [],
+      "vision_tokens": 19,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 62,
+      "answer_confidence": 1.0,
+      "visual_confidence": 0.7,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -4.20014599945136e-05,
+        "report": -1.0000420014599944,
+        "total": -1.0000420014599944,
+        "format_penalty": 0.0
+      },
+      "grpo": {
+        "content_advantage": 1.020125150680542,
+        "report_advantage": 1.020125150680542,
+        "active_policy_tokens": 89,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 62.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.18205320835113525,
+        "clipped_loss_mean": 0.14784672856330872,
+        "clipped_vocabulary_fraction": 5.033827619627118e-06,
+        "top1_disagreement_rate": 0.0,
+        "weighted_logit_grad_l2": 0.02875964529812336
+      }
+    },
+    {
+      "raw_completion": "<vision>A statue stands on the ground in front of a white building with a blue sky. A structure labeled \"Moray\" is visible on top. There are also squares around the area planting trees and some large pillars with lights nearby.</vision>\n<reason>Looking closely at the details inside the red box, the object appears to be a large, hard, monolithic object standing upright on the ground. A closer examination suggests it has a solid, dark appearance. The answer is black. Since no other information supports other options, answer is B.</reason>\n<answer>B</answer>\n<confidence><visual_confidence>4</visual_confidence><answer_confidence>10</answer_confidence></confidence>",
+      "reason_text": "Looking closely at the details inside the red box, the object appears to be a large, hard, monolithic object standing upright on the ground. A closer examination suggests it has a solid, dark appearance. The answer is black. Since no other information supports other options, answer is B.",
+      "output_protocol": "vision-reason-answer-confidence-v2",
+      "format_errors": [],
+      "vision_tokens": 44,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 122,
+      "answer_confidence": 1.0,
+      "visual_confidence": 0.4,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -0.08062630811517921,
+        "report": -1.0806263081151792,
+        "total": -1.0806263081151792,
+        "format_penalty": 0.0
+      },
+      "grpo": {
+        "content_advantage": 0.9395408630371094,
+        "report_advantage": 0.9395408630371094,
+        "active_policy_tokens": 149,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 122.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.07523974031209946,
+        "clipped_loss_mean": 0.04995186626911163,
+        "clipped_vocabulary_fraction": 1.006765501188056e-06,
+        "top1_disagreement_rate": 0.0,
+        "weighted_logit_grad_l2": 0.041715554893016815
+      }
+    },
+    {
+      "raw_completion": "<vision>A distinctive statue, possibly a lema, stand tall on a plaque displaying colorful shapes, visible against a cloudy sky in a park setting.</vision>\n\n<reason>The statue appears to be light-colored, likely indicating white or a very light brown/black, considering the surrounding bars are dark.</reason>",
+      "reason_text": "The statue appears to be light-colored, likely indicating white or a very light brown/black, considering the surrounding bars are dark.",
+      "output_protocol": "vision-reason-answer-confidence-v2",
+      "format_errors": [
+        "misordered_reason",
+        "missing_or_empty_answer",
+        "missing_confidence",
+        "noncanonical_structure"
+      ],
+      "vision_tokens": 26,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 62,
+      "answer_confidence": null,
+      "visual_confidence": null,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -1.0,
+        "report": -3.0,
+        "total": -3.0,
+        "format_penalty": 1.0
+      },
+      "grpo": {
+        "content_advantage": -0.9798328876495361,
+        "report_advantage": -0.9798328876495361,
+        "active_policy_tokens": 63,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 62.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.3636862337589264,
+        "clipped_loss_mean": 0.221174418926239,
+        "clipped_vocabulary_fraction": 7.047358394629555e-06,
+        "top1_disagreement_rate": 0.25,
+        "weighted_logit_grad_l2": 0.04184102639555931
+      }
+    },
+    {
+      "raw_completion": "<vision>The image shows a building with several indistinct lights. There is no statue, only the building and lights.</vision>\n\n<reason>The image contains a building. The question asks for the color of the statue, but no statue is visible in the provided picture.</reason>",
+      "reason_text": "The image contains a building. The question asks for the color of the statue, but no statue is visible in the provided picture.",
+      "output_protocol": "vision-reason-answer-confidence-v2",
+      "format_errors": [
+        "misordered_reason",
+        "missing_or_empty_answer",
+        "missing_confidence",
+        "noncanonical_structure"
+      ],
+      "vision_tokens": 21,
+      "proxy_fallback": false,
+      "answer_correct": false,
+      "content_tokens": 58,
+      "answer_confidence": null,
+      "visual_confidence": null,
+      "reward": {
+        "utility": 0.0,
+        "answer_score": -1.0,
+        "visual_score": -1.0,
+        "report": -3.0,
+        "total": -3.0,
+        "format_penalty": 1.0
+      },
+      "grpo": {
+        "content_advantage": -0.9798328876495361,
+        "report_advantage": -0.9798328876495361,
+        "active_policy_tokens": 59,
+        "scale_rewards": "none",
+        "loss_type": "grpo"
+      },
+      "opsd": {
+        "content_tokens": 58.0,
+        "sampled_positions": 4,
+        "raw_forward_kl_mean": 0.27407360076904297,
+        "clipped_loss_mean": 0.18999947607517242,
+        "clipped_vocabulary_fraction": 3.0202963898773305e-06,
+        "top1_disagreement_rate": 0.25,
+        "weighted_logit_grad_l2": 0.05461258813738823
+      }
+    }
+  ],
+  "micro_loss_scaled": [
+    -0.1897621899843216,
+    -0.20512697100639343,
+    0.27980342507362366,
+    0.2754128873348236
+  ],
+  "micro_opsd_unscaled": [
+    0.2610763907432556,
+    0.11903300136327744,
+    0.1393807977437973,
+    0.12181855738162994
+  ],
+  "student_grad_norm_before_clip": 39.17605531599702,
+  "student_grad_tensors": 473,
+  "teacher_grad_tensors": 0,
+  "optimizer_constructed": false,
+  "optimizer_updates": 0,
+  "peak_gpu_memory_bytes": 17242169344,
+  "runtime_seconds": 16.154210751876235
+}
