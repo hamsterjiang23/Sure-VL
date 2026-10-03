@@ -15,16 +15,16 @@ Teacher-grounded internal visual confidence and answer confidence for vision-lan
 
 ## Model output and Teacher input
 
-The Student receives the official full image with a red region marker and the question. Built-in thinking is disabled. The adapted VL-Calibration System Prompt requests a brief visual description, brief task deduction, an answer, and two **0–10 integer** reports:
+The Student receives the official full image with a red region marker and the question. Built-in thinking is disabled. The adapted VL-Calibration System Prompt requests a visual description, task deduction, an answer, and two **0–10 integer** reports:
 
 ```text
-<vision>brief question-relevant visual description</vision>
-<reason>brief deduction based on that visual evidence</reason>
+<vision>question-relevant visual description</vision>
+<reason>deduction based on that visual evidence</reason>
 <answer>A</answer>
 <confidence><visual_confidence>8</visual_confidence><answer_confidence>7</answer_confidence></confidence>
 ```
 
-Both roles use System + User messages and require these four blocks in order (`vision-reason-answer-confidence-v2`). The explicit `<reason>` is part of the answer protocol; the Qwen chat template still closes its built-in thinking prefix. Legacy responses missing `<reason>` remain readable but receive a format error.
+Both roles use System + User messages and require these four blocks in order (`vision-reason-answer-confidence-v2`). The prompt imposes no word or sentence limit on individual XML blocks. The explicit `<reason>` is part of the answer protocol; the Qwen chat template still closes its built-in thinking prefix. Legacy responses missing `<reason>` remain readable but receive a format error.
 
 The Teacher receives the **official enhanced crop**, a **different Teacher System Prompt**, the clean question, and optional additional evidence such as a scene graph. This adapts Vision-OPD's `bbox_images` replacement and optional `teacher_prompt` mechanism. The official Vision-OPD-6K data has no scene graph; the manifest supports `teacher_evidence` when supplied by another dataset. Answers used for grading never enter either prompt. See the [exact prompt protocol and source mapping](docs/prompt-protocol-v2.md).
 
@@ -65,7 +65,7 @@ CUDA_VISIBLE_DEVICES=0 uv run --no-sync --frozen --extra train --extra tracking 
   --config configs/trl/qwen35_08b_visionopd_protocol_v2_100step.json
 ```
 
-The [v2 prompt verification](docs/prompt-protocol-v2.md) used real images and native GRPO backward with zero optimizer updates. Final base-model format coverage was 7/8 at validation temperature and 2/4 at training temperature; the new 100-step configuration is prepared and has not been launched.
+The historical [v2 prompt verification](docs/prompt-protocol-v2.md) used real images and native GRPO backward with zero optimizer updates. Its `5ad552a` template included block length constraints and achieved base-model format coverage of 7/8 at validation temperature and 2/4 at training temperature. The current template removes those constraints and has not had a new GPU run; the new 100-step configuration is prepared and has not been launched.
 
 The recipe requests **100 successful optimizer updates** and online W&B. Validation uses the same frozen 32 held-out IDs at step 0, every 20 updates, and step 100. `training_completed.json` is written only after Trainer, Adam state, successful updates, EMA and validation gates agree. A command, process start, rollout or source test is not completion evidence.
 

@@ -6,12 +6,12 @@ Protocol ID: `vision-reason-answer-confidence-v2`. Both TRL and veRL use the sam
 
 ```xml
 <vision>Question-relevant visual observations.</vision>
-<reason>Brief deduction using the observations.</reason>
+<reason>Deduction using the observations.</reason>
 <answer>A</answer>
 <confidence><visual_confidence>8</visual_confidence><answer_confidence>7</answer_confidence></confidence>
 ```
 
-The scores above illustrate syntax. Both System Prompts include the same explicit placeholder structure and one identical, unrelated format example. Its 4/6 scores are illustrative, not targets. Real-model probes motivated this example after the prose-only and placeholder-only prompts omitted or collapsed the two inner score tags. The model is instructed to choose its own observations, answer, and independent scores. The common example avoids different Student/Teacher demonstrations, but example anchoring remains a prompt-dependent factor to record. Both scores must be integers from 0 to 10. The visual report refers to internal visual certainty; the answer report refers to unconditional final-answer correctness. A nonempty `reason` block is required. Built-in thinking remains disabled (`enable_thinking=False`, a closed empty Qwen thinking prefix).
+The scores above illustrate syntax. Both System Prompts include the same explicit placeholder structure and one identical, unrelated format example. Its 4/6 scores are illustrative, not targets. Real-model probes motivated this example after the prose-only and placeholder-only prompts omitted or collapsed the two inner score tags. The model is instructed to choose its own observations, answer, and independent scores. The common example avoids different Student/Teacher demonstrations, but example anchoring remains a prompt-dependent factor to record. Both scores must be integers from 0 to 10. The visual report refers to internal visual certainty; the answer report refers to unconditional final-answer correctness. A nonempty `reason` block is required. The current template imposes no word or sentence limits on individual XML blocks. Built-in thinking remains disabled (`enable_thinking=False`, a closed empty Qwen thinking prefix).
 
 ## Source mapping
 
@@ -30,10 +30,10 @@ Sure-VL adapts that mechanism: Student gets the red-marked full image; privilege
 System (from the shared builder for an A–D question):
 
 ```text
-You FIRST identify the question-relevant visual evidence, then reason from that evidence to reach the final answer. Explicitly separate visual perception in <vision>...</vision> and logical deduction in <reason>...</reason>. Put the final answer in <answer>...</answer>. Finally report two integer scores from 0 to 10 inside <confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Output exactly these four blocks in this order and no other text. Keep <vision> within 40 words and a nonempty <reason> within 60 words. Use one short sentence for each of these two blocks. Use <reason> for brief task deduction; do not open a builtin thinking block. If answer choices are given, output only the option letter in <answer>; otherwise, for a numeric answer, output only the number. Visual confidence is your internal certainty about the visual description given the image, not externally verified visual truth. Answer confidence is your unconditional chance that the final answer is correct. Use plain integers, without percentage signs or Markdown. After </answer>, you MUST continue with both confidence scores and close </confidence> before ending the response.
+You FIRST identify the question-relevant visual evidence, then reason from that evidence to reach the final answer. Explicitly separate visual perception in <vision>...</vision> and logical deduction in <reason>...</reason>. Put the final answer in <answer>...</answer>. Finally report two integer scores from 0 to 10 inside <confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Output exactly these four blocks in this order and no other text. The <vision> and <reason> blocks must be nonempty. Use <reason> for logical deduction; do not open a builtin thinking block. If answer choices are given, output only the option letter in <answer>; otherwise, for a numeric answer, output only the number. Visual confidence is your internal certainty about the visual description given the image, not externally verified visual truth. Answer confidence is your unconditional chance that the final answer is correct. Use plain integers, without percentage signs or Markdown. After </answer>, you MUST continue with both confidence scores and close </confidence> before ending the response.
 Required response structure (replace every placeholder with your own response):
 <vision>visual observations</vision>
-<reason>brief deduction</reason>
+<reason>logical deduction</reason>
 <answer>final answer</answer>
 <confidence><visual_confidence>integer 0 to 10</visual_confidence><answer_confidence>integer 0 to 10</answer_confidence></confidence>
 Format-only example for an unrelated counting question. Use your actual image and question; choose your own observations, answer, and two independent scores, without copying this example:
@@ -53,7 +53,7 @@ B. cylinder
 C. cone
 D. pyramid
 Answer with the option's letter from the given choices.
-Write all four blocks in this exact order, with all six opening and six closing tags: <vision>...</vision><reason>...</reason><answer>...</answer><confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Both inner confidence values must be integers 0 to 10. Use one brief sentence in vision and one in reason. Start your response with <vision>.
+Write all four blocks in this exact order, with all six opening and six closing tags: <vision>...</vision><reason>...</reason><answer>...</answer><confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Both inner confidence values must be integers 0 to 10. Start your response with <vision>.
 ```
 
 ## Exact privileged Teacher messages
@@ -61,10 +61,10 @@ Write all four blocks in this exact order, with all six opening and six closing 
 System:
 
 ```text
-You FIRST identify the question-relevant visual evidence, then reason from that evidence to reach the final answer. Explicitly separate visual perception in <vision>...</vision> and logical deduction in <reason>...</reason>. Put the final answer in <answer>...</answer>. Finally report two integer scores from 0 to 10 inside <confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Output exactly these four blocks in this order and no other text. Keep <vision> within 40 words and a nonempty <reason> within 60 words. Use one short sentence for each of these two blocks. Use <reason> for brief task deduction; do not open a builtin thinking block. If answer choices are given, output only the option letter in <answer>; otherwise, for a numeric answer, output only the number. Visual confidence is your internal certainty about the visual description given the image, not externally verified visual truth. Answer confidence is your unconditional chance that the final answer is correct. Use plain integers, without percentage signs or Markdown. After </answer>, you MUST continue with both confidence scores and close </confidence> before ending the response.
+You FIRST identify the question-relevant visual evidence, then reason from that evidence to reach the final answer. Explicitly separate visual perception in <vision>...</vision> and logical deduction in <reason>...</reason>. Put the final answer in <answer>...</answer>. Finally report two integer scores from 0 to 10 inside <confidence><visual_confidence>...</visual_confidence><answer_confidence>...</answer_confidence></confidence>. Output exactly these four blocks in this order and no other text. The <vision> and <reason> blocks must be nonempty. Use <reason> for logical deduction; do not open a builtin thinking block. If answer choices are given, output only the option letter in <answer>; otherwise, for a numeric answer, output only the number. Visual confidence is your internal certainty about the visual description given the image, not externally verified visual truth. Answer confidence is your unconditional chance that the final answer is correct. Use plain integers, without percentage signs or Markdown. After </answer>, you MUST continue with both confidence scores and close </confidence> before ending the response.
 Required response structure (replace every placeholder with your own response):
 <vision>visual observations</vision>
-<reason>brief deduction</reason>
+<reason>logical deduction</reason>
 <answer>final answer</answer>
 <confidence><visual_confidence>integer 0 to 10</visual_confidence><answer_confidence>integer 0 to 10</answer_confidence></confidence>
 Format-only example for an unrelated counting question. Use your actual image and question; choose your own observations, answer, and two independent scores, without copying this example:
@@ -105,7 +105,9 @@ Old outputs without `reason` can recover their answer and scores but receive `mi
 
 [`qwen35_08b_visionopd_protocol_v2_100step.json`](../configs/trl/qwen35_08b_visionopd_protocol_v2_100step.json) preserves the real-data 100-update recipe with a new output directory and W&B run name. It is a prepared configuration, not evidence that a new training run has completed.
 
-## Runtime verification
+## Historical runtime verification
+
+The results below were generated using prompt source `5ad552a4139ffd030e1e9d5d0ceb884b7eb2e60f`, which limited `vision` to 40 words, `reason` to 60 words, and each to one sentence. The current template above removes those length instructions. No new GPU run has been performed with that change, so the 7/8 and 2/4 format rates below do not measure the current template.
 
 Verified on `v100-2-hamster`, GPU 0, FP32/eager, the cached **base** Qwen3.5-0.8B snapshot, real official paired images, and the existing uv environment. Executed prompt source: `5ad552a4139ffd030e1e9d5d0ceb884b7eb2e60f`. The [full verification record](evidence/prompt_protocol_v2.json) preserves all probe/source/input hashes; the [native GRPO record](evidence/grpo_teacher_backward_protocol_v2.json) includes actual completions and gradient evidence.
 

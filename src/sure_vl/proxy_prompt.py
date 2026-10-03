@@ -37,9 +37,8 @@ _FORMAT_GUIDANCE = (
     "<confidence><visual_confidence>...</visual_confidence>"
     "<answer_confidence>...</answer_confidence></confidence>. "
     "Output exactly these four blocks in this order and no other text. "
-    "Keep <vision> within 40 words and a nonempty <reason> within 60 words. "
-    "Use one short sentence for each of these two blocks. "
-    "Use <reason> for brief task deduction; do not open a builtin thinking block. "
+    "The <vision> and <reason> blocks must be nonempty. "
+    "Use <reason> for logical deduction; do not open a builtin thinking block. "
     "If answer choices are given, output only the option letter in <answer>; "
     "otherwise, for a numeric answer, output only the number. "
     "Visual confidence is your internal certainty about the visual description given the image, "
@@ -49,7 +48,7 @@ _FORMAT_GUIDANCE = (
     "before ending the response.\n"
     "Required response structure (replace every placeholder with your own response):\n"
     "<vision>visual observations</vision>\n"
-    "<reason>brief deduction</reason>\n"
+    "<reason>logical deduction</reason>\n"
     "<answer>final answer</answer>\n"
     "<confidence><visual_confidence>integer 0 to 10</visual_confidence>"
     "<answer_confidence>integer 0 to 10</answer_confidence></confidence>\n"
@@ -127,7 +126,7 @@ def build_proxy_student_messages(example: ProxyExample) -> list[dict[str, Any]]:
     )
     answer_instruction = (
         "The answer must be one option letter. " if has_letter_choices
-        else "The answer must be a short direct answer. "
+        else "The answer must be a direct answer. "
     )
     system = _FORMAT_GUIDANCE + " " + answer_instruction + "Use only the given image for visual claims."
     hint = example.student_image_hint
@@ -141,7 +140,7 @@ def build_proxy_student_messages(example: ProxyExample) -> list[dict[str, Any]]:
         "<confidence><visual_confidence>...</visual_confidence>"
         "<answer_confidence>...</answer_confidence></confidence>. "
         "Both inner confidence values must be integers 0 to 10. "
-        "Use one brief sentence in vision and one in reason. Start your response with <vision>."
+        "Start your response with <vision>."
     )
     return [
         {"role": "system", "content": [{"type": "text", "text": system}]},

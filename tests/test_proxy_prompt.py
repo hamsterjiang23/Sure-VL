@@ -68,8 +68,11 @@ class ProxyPromptTests(unittest.TestCase):
         self.assertIn("<vision>", prompt)
         self.assertIn("<reason>", prompt)
         self.assertIn("<answer_confidence>", prompt)
-        self.assertIn("<vision> within 40 words", prompt)
-        self.assertIn("<reason> within 60 words", prompt)
+        self.assertNotIn("40 words", prompt)
+        self.assertNotIn("60 words", prompt)
+        self.assertNotIn("short sentence", prompt)
+        self.assertNotIn("brief", prompt)
+        self.assertIn("The <vision> and <reason> blocks must be nonempty", prompt)
         self.assertIn("output only the number", prompt)
         self.assertLess(prompt.index("output only the option letter"),
                         prompt.index("output only the number"))
@@ -134,6 +137,13 @@ class ProxyPromptTests(unittest.TestCase):
         student_messages = build_proxy_student_messages(_example())
         self.assertEqual([message["role"] for message in student_messages], ["system", "user"])
         student_system = student_messages[0]["content"][0]["text"]
+        for view_name, view_messages in (("student", student_messages), ("teacher", messages)):
+            with self.subTest(role=view_name):
+                message_text = str(view_messages)
+                self.assertNotIn("40 words", message_text)
+                self.assertNotIn("60 words", message_text)
+                self.assertNotIn("short sentence", message_text)
+                self.assertNotIn("brief sentence", message_text)
         self.assertEqual(student_system.split(" The answer must", 1)[0],
                          teacher_system.split(" You are the visual teacher", 1)[0])
         self.assertIn("Use only the given image", student_system)
